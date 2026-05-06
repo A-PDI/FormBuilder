@@ -38,10 +38,9 @@
     /* ---------- Layout ---------- */
     body {
       padding-top: calc(48px + env(safe-area-inset-top, 0px));
-      padding-left: 280px;           /* clear the fixed sidebar */
-      transition: padding-left 0.22s ease;
+      /* Sidebar is a hamburger-style overlay; content does not get pushed. */
+      padding-left: 0;
     }
-    body.sidebar-collapsed { padding-left: 0; }
 
     /* ---------- Top bar (file ops) ---------- */
     .topbar {
@@ -86,25 +85,96 @@
     .topbar .hint { font-size: 12px; opacity: 0.85; }
     .topbar .btn-label-short { display: none; }
 
-    /* ---------- Sidebar ---------- */
+    /* ---------- Hamburger button (in topbar) ---------- */
+    .topbar .hamburger-btn {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+      width: 38px;
+      height: 36px;
+      padding: 0;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .topbar .hamburger-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.6);
+    }
+    .topbar .hamburger-btn .hamburger-icon {
+      position: relative;
+      display: inline-block;
+      width: 18px;
+      height: 14px;
+    }
+    .topbar .hamburger-btn .hamburger-icon::before,
+    .topbar .hamburger-btn .hamburger-icon::after,
+    .topbar .hamburger-btn .hamburger-icon > span {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: white;
+      border-radius: 1px;
+      transition: transform 0.18s ease, opacity 0.18s ease, top 0.18s ease;
+    }
+    .topbar .hamburger-btn .hamburger-icon::before { top: 0; }
+    .topbar .hamburger-btn .hamburger-icon > span { top: 6px; }
+    .topbar .hamburger-btn .hamburger-icon::after  { top: 12px; }
+    /* When the menu is open, morph hamburger -> X */
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::before {
+      top: 6px; transform: rotate(45deg);
+    }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::after {
+      top: 6px; transform: rotate(-45deg);
+    }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon > span {
+      opacity: 0;
+    }
+
+    /* ---------- Sidebar (hamburger menu panel) ---------- */
     .sidebar {
       position: fixed;
-      top: 48px;
+      top: calc(48px + env(safe-area-inset-top, 0px));
       left: 0;
       bottom: 0;
-      width: 280px;
+      width: 300px;
+      max-width: 88vw;
       background: #f1f3f7;
       border-right: 1px solid var(--steel);
       overflow-y: auto;
       overflow-x: hidden;
-      z-index: 150;
+      z-index: 220;
       display: flex;
       flex-direction: column;
-      transition: transform 0.22s ease;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+      transform-origin: top left;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      box-shadow: 4px 6px 18px rgba(0,0,0,0.22);
     }
     body.sidebar-collapsed .sidebar {
       transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Backdrop dim while the menu is open (clicking it closes the menu) */
+    .sidebar-backdrop {
+      position: fixed;
+      top: calc(48px + env(safe-area-inset-top, 0px));
+      left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.32);
+      z-index: 210;
+      opacity: 1;
+      transition: opacity 0.18s ease;
+    }
+    body.sidebar-collapsed .sidebar-backdrop {
+      opacity: 0;
+      pointer-events: none;
     }
     .sidebar-header {
       position: sticky;
@@ -299,30 +369,6 @@
       font-weight: 600;
     }
     .sidebar-clear-btn:hover { border-color: var(--navy); }
-
-    /* Floating reopen button (only visible when collapsed) */
-    .sidebar-reopen {
-      position: fixed;
-      top: 64px;
-      left: 0;
-      z-index: 140;
-      width: 24px;
-      height: 56px;
-      background: var(--navy);
-      color: white;
-      border: none;
-      border-radius: 0 4px 4px 0;
-      cursor: pointer;
-      font-size: 18px;
-      font-family: inherit;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-    body.sidebar-collapsed .sidebar-reopen { display: flex; }
-    .sidebar-reopen:hover { background: #2a3c69; }
 
     /* ---------- Pages ---------- */
     .pages-container {
@@ -997,30 +1043,13 @@
         white-space: nowrap;
       }
       .topbar .hint { display: none; }
-      .topbar .spacer { flex: 0 0 4px; }
-      /* The expand-sidebar tab in the topbar - placed first when on mobile.
-         Currently sidebar-reopen lives outside the topbar; on mobile we shift
-         it right next to the title so it's reachable. */
-      .sidebar-reopen {
-        top: calc(env(safe-area-inset-top, 0) + 60px);
-      }
+      .topbar .spacer { flex: 1; }
 
-      /* Sidebar: overlay (not push) so the page doesn't shrink horizontally */
-      .sidebar {
-        width: 86vw;
-        max-width: 320px;
-        z-index: 220;
-        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
-      }
-      /* On mobile, default-collapsed via JS init logic */
-
-      /* Backdrop dimmer when sidebar is open on mobile */
-      body:not(.sidebar-collapsed)::before {
-        content: '';
-        position: fixed;
-        inset: 52px 0 0 0;
-        background: rgba(0, 0, 0, 0.45);
-        z-index: 210;
+      /* Sidebar already overlays content on all screen sizes; only the
+         sidebar top offset needs to track the taller mobile topbar. */
+      .sidebar,
+      .sidebar-backdrop {
+        top: calc(52px + env(safe-area-inset-top, 0px));
       }
 
       /* Bigger tap targets in sidebar */
@@ -1035,12 +1064,6 @@
         width: 36px;
         height: 36px;
         font-size: 20px;
-      }
-      .sidebar-reopen {
-        width: 32px;
-        height: 64px;
-        font-size: 22px;
-        top: 70px;
       }
 
       /* Scale the letter-size page down to fit the viewport */
@@ -1092,7 +1115,7 @@
         margin: 0;
         padding: 0 !important;
       }
-      .topbar, .sidebar, .sidebar-reopen, .no-print, .block-controls { display: none !important; }
+      .topbar, .sidebar, .sidebar-backdrop, .no-print, .block-controls { display: none !important; }
       .step-image .clear-btn, .logo-area .clear-btn { display: none !important; }
       .pages-container { padding: 0; gap: 0; }
       .page {
@@ -1121,7 +1144,11 @@
 <body>
 
 <header class="topbar no-print">
+  <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="true" title="Open menu">
+    <span class="hamburger-icon" aria-hidden="true"><span></span></span>
+  </button>
   <h1>Work Instruction Builder</h1>
+  <span class="spacer"></span>
   <button class="primary" onclick="window.print()">
     <span class="btn-label-full">Print / Save PDF</span>
     <span class="btn-label-short">Print</span>
@@ -1138,14 +1165,12 @@
     <span class="btn-label-full">Clear All</span>
     <span class="btn-label-short">Clear</span>
   </button>
-  <span class="spacer"></span>
-  <span class="hint">Click a block to edit. Hover any block for ↑ ↓ ✕ controls.</span>
 </header>
 
 <aside class="sidebar no-print" id="sidebar" aria-label="Editing tools">
   <div class="sidebar-header">
     <span>Tools</span>
-    <button class="sidebar-toggle" id="sidebarCollapseBtn" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-controls="sidebar" aria-expanded="true">‹</button>
+    <button class="sidebar-toggle" id="sidebarCollapseBtn" type="button" title="Close menu" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true">✕</button>
   </div>
 
   <div class="sidebar-section">
@@ -1194,7 +1219,7 @@
   </div>
 </aside>
 
-<button class="sidebar-reopen no-print" id="sidebarExpandBtn" type="button" title="Show sidebar" aria-label="Show sidebar" aria-controls="sidebar" aria-expanded="false">›</button>
+<div class="sidebar-backdrop no-print" id="sidebarBackdrop"></div>
 
 <div id="pagesContainer" class="pages-container"></div>
 <div id="toast" class="toast no-print"></div>
@@ -2698,15 +2723,22 @@
     });
   }
 
-  // ---------- Sidebar collapse / expand ----------
-  const SIDEBAR_STATE_KEY = 'workInstructionBuilder_v3_sidebar';
+  // ---------- Sidebar collapse / expand (hamburger menu) ----------
+  // Bumped to v4 since the prior key persisted "open" defaults that no longer
+  // make sense for the hamburger model (we want it default-closed everywhere).
+  const SIDEBAR_STATE_KEY = 'workInstructionBuilder_v4_sidebar';
 
   function setSidebarCollapsed(collapsed, persist) {
     document.body.classList.toggle('sidebar-collapsed', !!collapsed);
-    const collapseBtn = document.getElementById('sidebarCollapseBtn');
-    const expandBtn = document.getElementById('sidebarExpandBtn');
-    if (collapseBtn) collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    if (expandBtn)   expandBtn.setAttribute('aria-expanded',   collapsed ? 'false' : 'true');
+    const hamburgerBtn   = document.getElementById('hamburgerBtn');
+    const collapseBtn    = document.getElementById('sidebarCollapseBtn');
+    if (hamburgerBtn) {
+      hamburgerBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      hamburgerBtn.title = collapsed ? 'Open menu' : 'Close menu';
+    }
+    if (collapseBtn) {
+      collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
     if (persist) {
       try {
         localStorage.setItem(SIDEBAR_STATE_KEY, collapsed ? 'collapsed' : 'open');
@@ -2716,49 +2748,36 @@
     }
   }
 
-  function setupSidebarToggle() {
-    const collapseBtn = document.getElementById('sidebarCollapseBtn');
-    const expandBtn = document.getElementById('sidebarExpandBtn');
+  function toggleSidebar() {
+    const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+    setSidebarCollapsed(!isCollapsed, true);
+  }
 
+  function setupSidebarToggle() {
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const collapseBtn  = document.getElementById('sidebarCollapseBtn');
+    const backdrop     = document.getElementById('sidebarBackdrop');
+
+    if (hamburgerBtn) {
+      hamburgerBtn.addEventListener('click', toggleSidebar);
+    }
     if (collapseBtn) {
       collapseBtn.addEventListener('click', () => setSidebarCollapsed(true, true));
     }
-    if (expandBtn) {
-      expandBtn.addEventListener('click', () => setSidebarCollapsed(false, true));
+    // Backdrop click closes the menu (hamburger UX standard)
+    if (backdrop) {
+      backdrop.addEventListener('click', () => setSidebarCollapsed(true, true));
     }
+    // Esc closes the menu when it's open
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.body.classList.contains('sidebar-collapsed')) {
+        setSidebarCollapsed(true, true);
+      }
+    });
 
-    // On mobile, default-collapse and dismiss-on-backdrop-tap.
-    if (isMobileViewport()) {
-      // Backdrop dismiss: any tap on the body but outside the sidebar closes it.
-      document.addEventListener('click', (e) => {
-        if (document.body.classList.contains('sidebar-collapsed')) return;
-        if (!isMobileViewport()) return;
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
-        if (e.target === expandBtn || (expandBtn && expandBtn.contains(e.target))) return;
-        if (sidebar.contains(e.target)) return;
-        // Don't auto-close when the user taps a focusable cell — they may
-        // want the sidebar's format buttons accessible afterwards.
-        // But still close on taps in clearly non-editing areas.
-        setSidebarCollapsed(true, false);
-      }, true);
-    }
-
-    // Restore prior state.
-    let saved = null;
-    try {
-      saved = localStorage.getItem(SIDEBAR_STATE_KEY);
-    } catch (e) {
-      saved = null;
-    }
-    // Default-collapsed on mobile if no saved preference exists.
-    let initialCollapsed;
-    if (saved === 'collapsed' || saved === 'open') {
-      initialCollapsed = (saved === 'collapsed');
-    } else {
-      initialCollapsed = isMobileViewport();
-    }
-    setSidebarCollapsed(initialCollapsed, false);
+    // Always default to closed for the hamburger model. Persisted "open" only
+    // restores within the same session (closes again on next reload).
+    setSidebarCollapsed(true, false);
   }
 
   function isMobileViewport() {
