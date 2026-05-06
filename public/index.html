@@ -1,0 +1,2838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1D2B4F">
+  <title>Work Instruction Builder</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --navy:     #1D2B4F;
+      --steel:    #B8C4D8;
+      --frost:    #E8EBF0;
+      --charcoal: #595959;
+      --white:    #FFFFFF;
+      --danger:   #b3261e;
+      --success:  #2e7d32;
+      --info:     #1565c0;
+      --amber:    #f4b400;
+      --orange:   #e67e22;
+      --purple:   #5d3fd3;
+      --teal:     #00695c;
+      --cyan:     #0288d1;
+      --magenta:  #ad1457;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
+      background: #d4d7dc;
+      color: var(--charcoal);
+    }
+
+    /* ---------- Layout ---------- */
+    body {
+      padding-top: 48px;             /* clear the fixed top bar */
+      padding-left: 280px;           /* clear the fixed sidebar */
+      transition: padding-left 0.22s ease;
+    }
+    body.sidebar-collapsed { padding-left: 0; }
+
+    /* ---------- Top bar (file ops) ---------- */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 48px;
+      background: var(--navy);
+      color: white;
+      padding: 0 14px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    .topbar h1 {
+      margin: 0 14px 0 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .topbar button {
+      padding: 7px 13px;
+      border: none;
+      background: var(--steel);
+      color: var(--navy);
+      cursor: pointer;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 13px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .topbar button:hover { background: var(--frost); }
+    .topbar button.primary { background: var(--success); color: white; }
+    .topbar button.primary:hover { background: #3a8e3f; }
+    .topbar .spacer { flex: 1; }
+    .topbar .hint { font-size: 12px; opacity: 0.85; }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      position: fixed;
+      top: 48px;
+      left: 0;
+      bottom: 0;
+      width: 280px;
+      background: #f1f3f7;
+      border-right: 1px solid var(--steel);
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.22s ease;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+    }
+    body.sidebar-collapsed .sidebar {
+      transform: translateX(-100%);
+    }
+    .sidebar-header {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px 6px 14px;
+      background: var(--frost);
+      border-bottom: 1px solid var(--steel);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--charcoal);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+    .sidebar-toggle {
+      background: white;
+      border: 1px solid var(--steel);
+      color: var(--charcoal);
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 3px;
+      font-size: 16px;
+      font-family: inherit;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar-toggle:hover { background: var(--frost); border-color: var(--navy); }
+    .sidebar-section {
+      padding: 12px 14px 14px;
+      border-bottom: 1px solid var(--steel);
+    }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-section h3 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--charcoal);
+    }
+    .sidebar-section h4 {
+      margin: 12px 0 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--charcoal);
+      opacity: 0.85;
+    }
+
+    /* Block insertion buttons (full-width, stacked) */
+    .sidebar-block-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sidebar-block-list button {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      letter-spacing: 0.3px;
+    }
+    .sidebar-block-list button:hover {
+      filter: brightness(1.07);
+      border-color: var(--navy);
+    }
+    .sidebar-block-list .add-step {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+    .sidebar-block-list .add-warning { background: var(--danger); color: white; border-color: var(--danger); }
+    .sidebar-block-list .add-caution { background: var(--amber);  color: #2c1f00; border-color: #d99e00; }
+    .sidebar-block-list .add-note    { background: var(--info);   color: white; border-color: var(--info); }
+    .sidebar-block-list .add-watch   { background: var(--orange); color: white; border-color: var(--orange); }
+    .sidebar-block-list .add-monitor { background: var(--purple); color: white; border-color: var(--purple); }
+    .sidebar-block-list .add-record  { background: var(--success); color: white; border-color: var(--success); }
+    .sidebar-block-list .add-tools   { background: var(--teal);   color: white; border-color: var(--teal); }
+    .sidebar-block-list .add-parts   { background: var(--charcoal); color: white; border-color: var(--charcoal); }
+    .sidebar-block-list .add-inspect { background: var(--cyan);   color: white; border-color: var(--cyan); }
+    .sidebar-block-list .add-measure { background: var(--magenta); color: white; border-color: var(--magenta); }
+    .sidebar-block-list .add-section {
+      background: white;
+      color: var(--navy);
+      border-color: var(--navy);
+      border-width: 2px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+    }
+
+    /* Format section rows */
+    .sidebar-fmt-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .sidebar-fmt-row:last-child { margin-bottom: 0; }
+    .sidebar-fmt-row .label {
+      font-size: 11px;
+      color: var(--charcoal);
+      font-weight: 600;
+      margin-right: 2px;
+    }
+    .sidebar-fmt-row button {
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      padding: 4px 9px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      min-height: 26px;
+    }
+    .sidebar-fmt-row button:hover { border-color: var(--navy); }
+    .sidebar-fmt-row button:active { background: var(--frost); }
+    .sidebar-fmt-row .fmt-bold {
+      font-weight: 800;
+      width: 30px;
+      font-size: 14px;
+    }
+    .sidebar-fmt-row .size-btn { width: 28px; padding: 4px 0; text-align: center; }
+    .sidebar-fmt-row .size-btn[data-arg="2"] { font-size: 10px; }
+    .sidebar-fmt-row .size-btn[data-arg="3"] { font-size: 12px; }
+    .sidebar-fmt-row .size-btn[data-arg="4"] { font-size: 14px; }
+    .sidebar-fmt-row .size-btn[data-arg="5"] { font-size: 16px; }
+    .sidebar-fmt-row .color-swatch {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 2px solid white;
+      outline: 1px solid var(--steel);
+      cursor: pointer;
+      border-radius: 3px;
+      min-height: 0;
+    }
+    .sidebar-fmt-row .color-swatch:hover { outline-color: var(--navy); }
+
+    /* Inline-icon badge grid (2x2) */
+    .sidebar-icon-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .sidebar-icon-grid button {
+      border: 1px solid var(--steel);
+      padding: 6px 4px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      min-height: 28px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sidebar-icon-grid .fmt-icon-warning { background: var(--danger); color: white; border-color: var(--danger); }
+    .sidebar-icon-grid .fmt-icon-caution { background: var(--amber);  color: #2c1f00; border-color: #d99e00; }
+    .sidebar-icon-grid .fmt-icon-inspect { background: var(--info);   color: white; border-color: var(--info); }
+    .sidebar-icon-grid .fmt-icon-torque  { background: #424242;       color: white; border-color: #424242; }
+
+    .sidebar-clear-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 6px 8px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .sidebar-clear-btn:hover { border-color: var(--navy); }
+
+    /* Floating reopen button (only visible when collapsed) */
+    .sidebar-reopen {
+      position: fixed;
+      top: 64px;
+      left: 0;
+      z-index: 140;
+      width: 24px;
+      height: 56px;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      font-size: 18px;
+      font-family: inherit;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    body.sidebar-collapsed .sidebar-reopen { display: flex; }
+    .sidebar-reopen:hover { background: #2a3c69; }
+
+    /* ---------- Pages ---------- */
+    .pages-container {
+      padding: 22px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* Letter size: 8.5 x 11 inches */
+    .page {
+      width: 8.5in;
+      height: 11in;
+      background: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+      padding: 0.30in;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ---------- Header ---------- */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 6px;
+      margin-bottom: 7px;
+      flex-shrink: 0;
+    }
+
+    .logo-area {
+      width: 1.4in;
+      height: 0.85in;
+      border: 2px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+    .logo-area:hover { background: var(--frost); }
+    .logo-area.has-image { border-style: solid; border-color: transparent; }
+    .logo-area.dragover  { background: var(--frost); border-color: var(--navy); }
+    .logo-area img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-area .placeholder {
+      color: #888;
+      font-size: 10.5px;
+      text-align: center;
+      pointer-events: none;
+      line-height: 1.3;
+    }
+    .logo-area .clear-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .logo-area:hover .clear-btn { display: block; }
+
+    .header-info { flex: 1; min-width: 0; }
+    .title-field {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+      border: none;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+      padding: 1px 0;
+      background: transparent;
+    }
+    .title-field::placeholder { color: var(--steel); font-style: italic; font-weight: 500; }
+
+    .meta-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 5px;
+      font-size: 11px;
+      flex-wrap: wrap;
+    }
+    .meta-field { display: flex; align-items: baseline; gap: 4px; }
+    .meta-field label { font-weight: 700; color: var(--navy); white-space: nowrap; }
+    .meta-field input {
+      border: none;
+      border-bottom: 1px solid var(--steel);
+      outline: none;
+      padding: 1px 2px;
+      font-family: inherit;
+      font-size: 11px;
+      background: transparent;
+      color: var(--charcoal);
+    }
+    .meta-field input:focus { border-bottom-color: var(--navy); }
+
+    /* ---------- Content area ---------- */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.10in;
+      padding-top: 0.11in;          /* room for first-row step-number tabs */
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .row-step {
+      flex: 0 0 1.85in;
+      height: 1.85in;
+    }
+
+    .row-callout {
+      flex: 0 0 auto;
+      min-height: 0.32in;
+    }
+
+    .row-section {
+      flex: 0 0 0.40in;
+      height: 0.40in;
+    }
+
+    .row-parts {
+      flex: 0 0 auto;
+      min-height: 0.40in;
+    }
+
+    /* ---------- Parts list table block ---------- */
+    .parts-block {
+      background: white;
+      border: 1.5px solid var(--charcoal);
+      border-radius: 3px;
+      position: relative;
+      overflow: visible;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .parts-header {
+      background: var(--charcoal);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .parts-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    .parts-table thead th {
+      background: #eef0f3;
+      border: 1px solid var(--steel);
+      padding: 0;
+      text-align: left;
+      vertical-align: middle;
+      position: relative;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .parts-table tbody td {
+      border: 1px solid var(--steel);
+      padding: 0;
+      vertical-align: middle;
+      position: relative;
+    }
+
+    .parts-cell {
+      outline: none;
+      cursor: text;
+      padding: 4px 8px;
+      min-height: 18px;
+      font-size: 10.5px;
+      line-height: 1.3;
+      color: var(--charcoal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .parts-cell:focus {
+      background: var(--frost);
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .parts-cell:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+    }
+    .parts-col-header {
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      color: var(--navy);
+      background: #eef0f3;
+      text-transform: uppercase;
+    }
+
+    /* Column-delete: small ✕ that floats above the column header */
+    .parts-col-delete {
+      visibility: hidden;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--danger);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      z-index: 3;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .parts-table thead th:hover .parts-col-delete {
+      visibility: visible;
+    }
+
+    /* Right gutter column - holds row-delete buttons, hidden in print */
+    .parts-actions-col {
+      width: 22px;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      position: relative;
+    }
+
+    .parts-row-delete {
+      visibility: hidden;
+      position: absolute;
+      top: 50%;
+      left: 3px;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--danger);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+    }
+    .parts-table tbody tr:hover .parts-row-delete {
+      visibility: visible;
+    }
+
+    /* Action footer (Add Row / Add Column) - on-screen only */
+    .parts-actions {
+      padding: 4px 10px;
+      background: #f5f6f8;
+      display: flex;
+      gap: 6px;
+      border-top: 1px solid var(--steel);
+    }
+    .parts-actions button {
+      font-size: 11px;
+      padding: 2px 10px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-weight: 600;
+    }
+    .parts-actions button:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+    .parts-paste-hint {
+      font-size: 10px;
+      color: var(--charcoal);
+      opacity: 0.7;
+      font-style: italic;
+      margin-left: auto;
+      align-self: center;
+    }
+
+    /* ---------- Section header block ---------- */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      background: white;
+      color: var(--navy);
+      border-bottom: 2.5px solid var(--navy);
+      padding: 0 2px 4px;
+      position: relative;
+      height: 100%;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .section-header-text {
+      flex: 1;
+      outline: none;
+      cursor: text;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--navy);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+      min-width: 0;
+      line-height: 1.2;
+    }
+    .section-header-text:focus { background: var(--frost); border-radius: 2px; }
+    .section-header-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-weight: 400;
+      font-style: italic;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    /* ---------- Step block (horizontal: image left, text right) ---------- */
+    .step {
+      border: 1.5px solid var(--navy);
+      border-radius: 3px;
+      padding: 4px 5px;
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      overflow: visible;            /* allow step-number tab to extend above */
+      position: relative;
+      background: white;
+      height: 100%;
+    }
+
+    .step-number {
+      background: var(--navy);
+      color: white;
+      min-width: 22px;
+      height: 18px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+      position: absolute;
+      top: -10px;                   /* stick out above the cell border */
+      left: 4px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      z-index: 2;
+    }
+
+    .step-image {
+      flex: 0 0 3.85in;             /* fixed width, image stays consistent */
+      background: var(--frost);
+      border: 1px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+    .step-image:hover { background: #dde4ee; }
+    .step-image.has-image { background: white; border-style: solid; border-color: var(--frost); }
+    .step-image.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
+    .step-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .step-image .placeholder {
+      color: #888;
+      font-size: 10px;
+      text-align: center;
+      padding: 4px;
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    .step-image .clear-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.65);
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .step-image:hover .clear-btn { display: block; }
+
+    /* ---------- Editable rich text (right of image, full remaining width) ---------- */
+    .step-text {
+      flex: 1;                      /* fill remaining width */
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.35;
+      height: 100%;
+      padding: 4px 6px;
+      background: transparent;
+      color: var(--charcoal);
+      overflow: hidden;
+      cursor: text;
+      min-width: 0;                 /* allow flex shrinking past content */
+    }
+    .step-text:focus { background: rgba(232, 235, 240, 0.5); }
+    .step-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    /* execCommand fontSize emits CSS keyword sizes; map to print-friendly pixels. */
+    .rich-text-editor [style*="font-size: small"]    { font-size: 9px    !important; line-height: 1.25; }
+    .rich-text-editor [style*="font-size: medium"]   { font-size: 10.5px !important; line-height: 1.3;  }
+    .rich-text-editor [style*="font-size: large"]    { font-size: 13px   !important; line-height: 1.35; }
+    .rich-text-editor [style*="font-size: x-large"]  { font-size: 16px   !important; line-height: 1.4;  }
+    .rich-text-editor [style*="font-size: xx-large"] { font-size: 16px   !important; line-height: 1.4;  }
+
+    /* ---------- Inline icon badges (within editable text) ---------- */
+    .wi-icon {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      margin: 0 2px 0 0;
+      white-space: nowrap;
+      vertical-align: baseline;
+      font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .wi-warning { background: var(--danger); color: #ffffff; }
+    .wi-caution { background: var(--amber);  color: #2c1f00; }
+    .wi-inspect { background: var(--info);   color: #ffffff; }
+    .wi-torque  { background: #424242;       color: #ffffff; }
+
+    /* ---------- Callout block (full width) ---------- */
+    .callout {
+      display: flex;
+      align-items: stretch;
+      border: 2px solid var(--callout-color, var(--charcoal));
+      border-radius: 3px;
+      background: white;
+      min-height: 100%;
+      position: relative;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .callout-warning { --callout-color: #b3261e; --callout-text-color: #ffffff; }
+    .callout-caution { --callout-color: #f4b400; --callout-text-color: #2c1f00; }
+    .callout-note    { --callout-color: #1565c0; --callout-text-color: #ffffff; }
+    .callout-watch   { --callout-color: #e67e22; --callout-text-color: #ffffff; }
+    .callout-monitor { --callout-color: #5d3fd3; --callout-text-color: #ffffff; }
+    .callout-record  { --callout-color: #2e7d32; --callout-text-color: #ffffff; }
+    .callout-tools   { --callout-color: #00695c; --callout-text-color: #ffffff; }
+    .callout-inspect { --callout-color: #0288d1; --callout-text-color: #ffffff; }
+    .callout-measure { --callout-color: #ad1457; --callout-text-color: #ffffff; }
+
+    .callout-badge {
+      background: var(--callout-color);
+      color: var(--callout-text-color);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+      min-width: 0.85in;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .callout-text {
+      flex: 1;
+      padding: 4px 10px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--charcoal);
+      outline: none;
+      cursor: text;
+      /* Multi-line: text wraps and the row grows to fit */
+      overflow-wrap: break-word;
+      word-break: break-word;
+      white-space: normal;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+    .callout-text:focus { background: rgba(232, 235, 240, 0.5); }
+    .callout-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    /* ---------- Block controls (delete / move) ---------- */
+    .block-controls {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      display: flex;
+      gap: 2px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .step:hover > .block-controls,
+    .callout:hover > .block-controls,
+    .section-header:hover > .block-controls,
+    .parts-block:hover > .block-controls {
+      opacity: 1;
+    }
+    .block-controls button {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0;
+      font-family: inherit;
+    }
+    .block-controls button:hover { background: rgba(0, 0, 0, 0.85); }
+    .block-controls button.delete:hover { background: var(--danger); }
+
+    /* ---------- Empty state ---------- */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--charcoal);
+      border: 2px dashed var(--steel);
+      border-radius: 4px;
+      padding: 30px;
+    }
+    .empty-state-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.3px;
+    }
+    .empty-state-body {
+      font-size: 13px;
+      color: var(--charcoal);
+      opacity: 0.8;
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.4;
+    }
+    .empty-state-body strong { color: var(--navy); }
+
+    /* ---------- Footer ---------- */
+    .page-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: var(--charcoal);
+      padding-top: 5px;
+      border-top: 1px solid var(--frost);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: fixed;
+      top: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 4px;
+      z-index: 1000;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ---------- Mobile / narrow-screen layout ---------- */
+    @media (max-width: 900px) {
+      body {
+        /* No fixed-sidebar offset on small screens; sidebar overlays the page when opened. */
+        padding-left: 0;
+        padding-top: 52px;
+        /* Allow horizontal scroll for the letter-sized page if user zooms out. */
+        overflow-x: auto;
+      }
+
+      .topbar {
+        height: 52px;
+        padding: 0 8px 0 8px;
+        gap: 5px;
+        overflow-x: auto;
+      }
+      .topbar h1 {
+        font-size: 13px;
+        margin: 0 4px 0 0;
+        white-space: nowrap;
+      }
+      .topbar button {
+        padding: 9px 11px;
+        font-size: 13px;
+        flex-shrink: 0;
+        min-height: 36px;
+      }
+      .topbar .hint { display: none; }
+      .topbar .spacer { flex: 0 0 4px; }
+
+      /* Sidebar: overlay (not push) so the page doesn't shrink horizontally */
+      .sidebar {
+        width: 86vw;
+        max-width: 320px;
+        z-index: 220;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+      }
+      /* On mobile, default-collapsed via JS init logic */
+
+      /* Backdrop dimmer when sidebar is open on mobile */
+      body:not(.sidebar-collapsed)::before {
+        content: '';
+        position: fixed;
+        inset: 52px 0 0 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 210;
+      }
+
+      /* Bigger tap targets in sidebar */
+      .sidebar-block-list button {
+        padding: 11px 12px;
+        font-size: 13px;
+        min-height: 44px;
+      }
+      .sidebar-fmt-row button { min-height: 36px; }
+      .sidebar-icon-grid button { min-height: 38px; }
+      .sidebar-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+      }
+      .sidebar-reopen {
+        width: 32px;
+        height: 64px;
+        font-size: 22px;
+        top: 70px;
+      }
+
+      /* Scale the letter-size page down to fit the viewport */
+      .pages-container {
+        padding: 12px 0 30px;
+        gap: 14px;
+      }
+      .page {
+        /* Use CSS transform to keep the print layout intact while shrinking visually. */
+        transform: scale(var(--page-scale, 1));
+        transform-origin: top center;
+        margin-bottom: var(--page-margin-fix, 0px);
+      }
+
+      /* Step number badge needs a bit more bottom margin since it sits above */
+      .row-step:first-child { margin-top: 6px; }
+
+      /* Touch target hint for hover-only controls */
+      .step-image .clear-btn,
+      .parts-row-delete,
+      .parts-col-delete {
+        visibility: visible;
+      }
+      /* Permanently show block controls on mobile (touch can't hover) */
+      .block-controls { opacity: 1; }
+      .block-controls button {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .topbar h1 { display: none; }
+      .topbar button { padding: 8px 9px; font-size: 12px; }
+    }
+
+    /* ---------- Print rules ---------- */
+    @page {
+      size: letter;
+      margin: 0;
+    }
+
+    @media print {
+      html, body {
+        background: white;
+        margin: 0;
+        padding: 0 !important;
+      }
+      .topbar, .sidebar, .sidebar-reopen, .no-print, .block-controls { display: none !important; }
+      .step-image .clear-btn, .logo-area .clear-btn { display: none !important; }
+      .pages-container { padding: 0; gap: 0; }
+      .page {
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+        break-after: page;
+      }
+      .page:last-child { page-break-after: auto; break-after: auto; }
+      .step-image:not(.has-image) {
+        background: white;
+        border: 1px solid #bbb;
+      }
+      .step-image:not(.has-image) .placeholder { display: none; }
+      .logo-area:not(.has-image) { border: none; }
+      .logo-area:not(.has-image) .placeholder { display: none; }
+      .title-field::placeholder,
+      .meta-field input::placeholder { color: transparent !important; }
+      .step-text:empty::before,
+      .callout-text:empty::before { content: ''; }
+      .step-text:focus, .callout-text:focus { background: transparent; }
+      .empty-state { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <h1>Work Instruction Builder</h1>
+  <button class="primary" onclick="window.print()">Print / Save PDF</button>
+  <button onclick="exportTemplate()">Save File</button>
+  <button onclick="importTemplate()">Load File</button>
+  <button onclick="newDocument()">Clear All</button>
+  <span class="spacer"></span>
+  <span class="hint">Click a block to edit. Hover any block for ↑ ↓ ✕ controls.</span>
+</header>
+
+<aside class="sidebar no-print" id="sidebar" aria-label="Editing tools">
+  <div class="sidebar-header">
+    <span>Tools</span>
+    <button class="sidebar-toggle" id="sidebarCollapseBtn" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-controls="sidebar" aria-expanded="true">‹</button>
+  </div>
+
+  <div class="sidebar-section">
+    <h3>Insert Block</h3>
+    <div class="sidebar-block-list">
+      <button class="add-section" data-add="section" type="button" title="Add a section header (separates document sections)">+ SECTION</button>
+      <button class="add-step" data-add="step" type="button" title="Add a step block (image + text)">+ Step</button>
+      <button class="add-warning" data-add="callout" data-kind="warning" type="button" title="Add a WARNING banner (risk of injury)">+ ⚠ WARNING</button>
+      <button class="add-caution" data-add="callout" data-kind="caution" type="button" title="Add a CAUTION banner (risk of equipment damage)">+ ⚠ CAUTION</button>
+      <button class="add-note"    data-add="callout" data-kind="note"    type="button" title="Add a NOTE banner (general info)">+ ℹ NOTE</button>
+      <button class="add-watch"   data-add="callout" data-kind="watch"   type="button" title="Add a WATCH / PAY ATTENTION banner">+ ❗ WATCH</button>
+      <button class="add-monitor" data-add="callout" data-kind="monitor" type="button" title="Add a MONITOR banner (watch a parameter)">+ ◉ MONITOR</button>
+      <button class="add-record"  data-add="callout" data-kind="record"  type="button" title="Add a RECORD banner (log a measurement)">+ ✎ RECORD</button>
+      <button class="add-tools"   data-add="callout" data-kind="tools"   type="button" title="Add a TOOLS banner (required tools)">+ ⚒ TOOLS</button>
+      <button class="add-parts"   data-add="parts"                            type="button" title="Add a PARTS LIST table">+ ▤ PARTS LIST</button>
+      <button class="add-inspect" data-add="callout" data-kind="inspect" type="button" title="Add an INSPECT banner">+ ⌕ INSPECT</button>
+      <button class="add-measure" data-add="callout" data-kind="measure" type="button" title="Add a MEASURE banner">+ ↔ MEASURE</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <h3>Format Text</h3>
+    <div class="sidebar-fmt-row">
+      <button class="fmt-bold" data-cmd="bold" type="button" title="Bold (toggle)">B</button>
+      <span class="label">Size:</span>
+      <button class="size-btn" data-cmd="fontSize" data-arg="2" type="button" title="Small text">S</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="3" type="button" title="Normal text">N</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="4" type="button" title="Medium text">M</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="5" type="button" title="Large text">L</button>
+    </div>
+    <div class="sidebar-fmt-row">
+      <span class="label">Color:</span>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#595959" style="background:#595959" type="button" title="Charcoal (default)" aria-label="Charcoal"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#b3261e" style="background:#b3261e" type="button" title="Red" aria-label="Red"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#1565c0" style="background:#1565c0" type="button" title="Blue" aria-label="Blue"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#2e7d32" style="background:#2e7d32" type="button" title="Green" aria-label="Green"></button>
+    </div>
+    <h4>Inline icon badges</h4>
+    <div class="sidebar-icon-grid">
+      <button class="fmt-icon-warning" data-icon="warning" type="button" title="Inline WARNING badge">⚠ WARNING</button>
+      <button class="fmt-icon-caution" data-icon="caution" type="button" title="Inline CAUTION badge">⚠ CAUTION</button>
+      <button class="fmt-icon-inspect" data-icon="inspect" type="button" title="Inline INSPECT badge">◉ INSPECT</button>
+      <button class="fmt-icon-torque"  data-icon="torque"  type="button" title="Inline TORQUE badge">⚙ TORQUE</button>
+    </div>
+    <button class="sidebar-clear-btn" data-cmd="removeFormat" type="button" title="Clear formatting from selection">⌫ Clear formatting</button>
+  </div>
+</aside>
+
+<button class="sidebar-reopen no-print" id="sidebarExpandBtn" type="button" title="Show sidebar" aria-label="Show sidebar" aria-controls="sidebar" aria-expanded="false">›</button>
+
+<div id="pagesContainer" class="pages-container"></div>
+<div id="toast" class="toast no-print"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Storage ----------
+  // v3: blocks-based document model. Older keys are migrated on first load.
+  const STORAGE_KEY = 'workInstructionBuilder_v4';
+  const LEGACY_KEYS = [
+    'workInstructionBuilder_v3',
+    'workInstructionBuilder_v2',
+    'workInstructionBuilder_v1'
+  ];
+
+  // ---------- Pagination constants (inches) ----------
+  // Available content height per page is ~8.98in (11 - 0.7 padding - ~1.07 header
+  // - ~0.25 footer). Use 8.9 as a safety threshold.
+  const PAGE_CONTENT_HEIGHT = 9.0;
+  const STEP_ROW_HEIGHT     = 1.85;
+  const CALLOUT_ROW_HEIGHT  = 0.32;
+  const SECTION_ROW_HEIGHT  = 0.40;
+  const ROW_GAP             = 0.10;
+
+  // Parts list table heights:
+  // Brown header bar (~0.30") + column header row (~0.25")
+  // + each data row (~0.22") + action footer (~0.27", visible on screen, hidden in print)
+  const PARTS_BASE_HEIGHT = 0.85;
+  const PARTS_ROW_HEIGHT  = 0.22;
+
+  // ---------- Callout kinds ----------
+  const CALLOUT_KINDS = {
+    warning:   { label: 'WARNING',    icon: '\u26A0' },  // ⚠
+    caution:   { label: 'CAUTION',    icon: '\u26A0' },  // ⚠
+    note:      { label: 'NOTE',       icon: '\u2139' },  // ℹ
+    watch:     { label: 'WATCH',      icon: '\u2757' },  // ❗
+    monitor:   { label: 'MONITOR',    icon: '\u25C9' },  // ◉
+    record:    { label: 'RECORD',     icon: '\u270E' },  // ✎
+    tools:     { label: 'TOOLS',      icon: '\u2692' },  // ⚒
+    inspect:   { label: 'INSPECT',    icon: '\u2315' },  // ⌕
+    measure:   { label: 'MEASURE',    icon: '\u2194' }   // ↔
+  };
+
+  // ---------- State ----------
+  // _idCounter must be declared before state is constructed because
+  // createEmptyState() -> createDefaultBlocks() -> genId() reads it.
+  let _idCounter = 0;
+  let state = createEmptyState();
+  let lastFocusedEditable = null;
+  let lastFocusedBlockId = null;
+  let focusBlockIdAfterRender = null;
+
+  function genId() {
+    _idCounter += 1;
+    return 'b_' + Date.now().toString(36) + '_' + _idCounter.toString(36);
+  }
+
+  function createStepBlock(img, text) {
+    return {
+      id: genId(),
+      type: 'step',
+      img: img == null ? null : img,
+      text: text == null ? '' : text
+    };
+  }
+
+  function createCalloutBlock(kind, text) {
+    return {
+      id: genId(),
+      type: 'callout',
+      kind: CALLOUT_KINDS[kind] ? kind : 'note',
+      text: text == null ? '' : text
+    };
+  }
+
+  function createSectionBlock(text) {
+    return {
+      id: genId(),
+      type: 'section',
+      text: text == null ? '' : text
+    };
+  }
+
+  function createPartsBlock(columns, rows) {
+    const cols = Array.isArray(columns) && columns.length > 0
+      ? columns.slice()
+      : ['Part Number', 'Description', 'Quantity'];
+    let rs;
+    if (Array.isArray(rows) && rows.length > 0) {
+      rs = rows.map(r => {
+        const out = Array(cols.length).fill('');
+        if (Array.isArray(r)) {
+          for (let i = 0; i < Math.min(r.length, cols.length); i++) {
+            out[i] = typeof r[i] === 'string' ? r[i] : '';
+          }
+        }
+        return out;
+      });
+    } else {
+      rs = [Array(cols.length).fill('')];
+    }
+    return {
+      id: genId(),
+      type: 'parts',
+      columns: cols,
+      rows: rs
+    };
+  }
+
+  function createEmptyState() {
+    return {
+      logo: null,
+      title: '',
+      partNumber: '',
+      operation: '',
+      rev: '',
+      date: '',
+      blocks: []
+    };
+  }
+
+  // ---------- Migration ----------
+  function migrateLegacyState(old) {
+    if (!old || typeof old !== 'object') return null;
+    // v3 (or already v4): blocks array exists. Filter out empty step placeholders
+    // that the old default-6-steps layout used to seed.
+    if (Array.isArray(old.blocks)) {
+      const blocks = old.blocks.filter(b => {
+        if (!b) return false;
+        if (b.type !== 'step' && b.type !== 'callout' && b.type !== 'section' && b.type !== 'parts') return false;
+        if (b.type === 'callout') return true;  // keep all callouts (incl. legacy parts callouts)
+        if (b.type === 'parts') return true;    // keep all parts tables
+        if (b.type === 'section') {
+          // Keep only if section has a title
+          const hasText = typeof b.text === 'string' && b.text.replace(/<[^>]*>/g, '').trim().length > 0;
+          return hasText;
+        }
+        // Step: keep only if it has actual content
+        const hasImg = !!b.img;
+        const hasText = typeof b.text === 'string' && b.text.replace(/<[^>]*>/g, '').trim().length > 0;
+        return hasImg || hasText;
+      });
+      return {
+        logo: old.logo || null,
+        title: old.title || '',
+        partNumber: old.partNumber || '',
+        operation: old.operation || '',
+        rev: old.rev || '',
+        date: old.date || '',
+        blocks: blocks
+      };
+    }
+    // v1/v2 had pages of steps
+    if (Array.isArray(old.pages)) {
+      const blocks = [];
+      for (const page of old.pages) {
+        if (!page || !Array.isArray(page.steps)) continue;
+        for (const step of page.steps) {
+          if (!step) continue;
+          const hasImg = !!step.img;
+          const hasText = typeof step.text === 'string' && step.text.trim().length > 0;
+          // Drop empty placeholder steps from the old fixed 6-per-page layout.
+          if (hasImg || hasText) {
+            blocks.push(createStepBlock(step.img || null, step.text || ''));
+          }
+        }
+      }
+      return {
+        logo: old.logo || null,
+        title: old.title || '',
+        partNumber: old.partNumber || '',
+        operation: old.operation || '',
+        rev: old.rev || '',
+        date: old.date || '',
+        blocks: blocks
+      };
+    }
+    return null;
+  }
+
+  function normalizeState(s) {
+    if (!s || typeof s !== 'object') return createEmptyState();
+    if (typeof s.logo === 'undefined') s.logo = null;
+    ['title', 'partNumber', 'operation', 'rev', 'date'].forEach(k => {
+      if (typeof s[k] !== 'string') s[k] = '';
+    });
+    if (!Array.isArray(s.blocks)) s.blocks = [];
+
+    // In-place upgrade: previous versions stored Parts List as a callout.
+    // Convert any { type: 'callout', kind: 'parts' } into a structured parts table.
+    s.blocks = s.blocks.map(b => {
+      if (b && b.type === 'callout' && b.kind === 'parts') {
+        const text = (typeof b.text === 'string' ? b.text : '').replace(/<[^>]*>/g, '').trim();
+        return {
+          id: b.id || genId(),
+          type: 'parts',
+          columns: ['Part Number', 'Description', 'Quantity'],
+          rows: text ? [['', text, '']] : [['', '', '']]
+        };
+      }
+      return b;
+    });
+
+    s.blocks = s.blocks.filter(b => b && (b.type === 'step' || b.type === 'callout' || b.type === 'section' || b.type === 'parts'));
+    s.blocks.forEach(b => {
+      if (!b.id) b.id = genId();
+      if (b.type === 'step') {
+        if (typeof b.img === 'undefined') b.img = null;
+        if (typeof b.text !== 'string') b.text = '';
+      } else if (b.type === 'callout') {
+        if (!CALLOUT_KINDS[b.kind]) b.kind = 'note';
+        if (typeof b.text !== 'string') b.text = '';
+      } else if (b.type === 'section') {
+        if (typeof b.text !== 'string') b.text = '';
+      } else if (b.type === 'parts') {
+        // Defaults
+        if (!Array.isArray(b.columns) || b.columns.length === 0) {
+          b.columns = ['Part Number', 'Description', 'Quantity'];
+        }
+        b.columns = b.columns.map(c => typeof c === 'string' ? c : '');
+        if (!Array.isArray(b.rows)) b.rows = [];
+        // Normalize each row to match the columns length
+        b.rows = b.rows.map(r => {
+          const out = Array(b.columns.length).fill('');
+          if (Array.isArray(r)) {
+            for (let i = 0; i < Math.min(r.length, b.columns.length); i++) {
+              out[i] = typeof r[i] === 'string' ? r[i] : '';
+            }
+          }
+          return out;
+        });
+        if (b.rows.length === 0) {
+          b.rows = [Array(b.columns.length).fill('')];
+        }
+      }
+    });
+    return s;
+  }
+
+  // ---------- Persistence ----------
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      // Quota likely exceeded with many large images. Don't block work —
+      // user can still save to file.
+      console.warn('Auto-save skipped (storage limit). Use "Save File" to keep your work.', e);
+    }
+  }
+
+  function loadState() {
+    // Try v3 first
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && Array.isArray(parsed.blocks)) {
+          state = normalizeState(parsed);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load saved state:', e);
+    }
+    // Fall back to legacy keys
+    for (const key of LEGACY_KEYS) {
+      try {
+        const data = localStorage.getItem(key);
+        if (!data) continue;
+        const parsed = JSON.parse(data);
+        const migrated = migrateLegacyState(parsed);
+        if (migrated) {
+          state = normalizeState(migrated);
+          saveState(); // Persist as v3
+          return true;
+        }
+      } catch (e) {
+        console.warn('Could not migrate legacy state from', key, e);
+      }
+    }
+    return false;
+  }
+
+  // ---------- Image processing ----------
+  // For JPEG output, fill the canvas white first so transparent source pixels
+  // (e.g. PNGs with the background removed) don't go black on re-encode.
+  function processImage(file, opts) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type || !file.type.startsWith('image/')) {
+        reject(new Error('Selected file is not an image.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Failed to decode image.'));
+        img.onload = () => {
+          try {
+            const maxW = opts.maxWidth;
+            const maxH = opts.maxHeight;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            if (w > maxW || h > maxH) {
+              const ratio = Math.min(maxW / w, maxH / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            if (opts.mimeType === 'image/jpeg') {
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, w, h);
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL(opts.mimeType, opts.quality));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadLogoFile(file) {
+    return processImage(file, {
+      maxWidth: 800, maxHeight: 400, mimeType: 'image/png', quality: 1.0
+    });
+  }
+
+  function loadStepImageFile(file) {
+    return processImage(file, {
+      maxWidth: 1600, maxHeight: 1600, mimeType: 'image/jpeg', quality: 0.85
+    });
+  }
+
+  function pickFile(accept) {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept || 'image/*';
+      input.onchange = () => {
+        resolve(input.files && input.files[0] ? input.files[0] : null);
+      };
+      input.click();
+    });
+  }
+
+  // ---------- Block helpers ----------
+  function findBlockById(id) {
+    return state.blocks.find(b => b.id === id) || null;
+  }
+
+  function findBlockIndex(id) {
+    return state.blocks.findIndex(b => b.id === id);
+  }
+
+  // ---------- Folding blocks into rows ----------
+  // Steps pair greedily into 2-up rows; callouts always force a row break
+  // and take their own full-width row.
+  function blocksToRows(blocks) {
+    // Each block now occupies its own full-width row. Steps, callouts, and
+    // section headers are structurally identical from a pagination standpoint;
+    // only their height differs (handled in paginate()).
+    const rows = [];
+    for (const block of blocks) {
+      if (block.type === 'callout') {
+        rows.push({ type: 'callout', block });
+      } else if (block.type === 'step') {
+        rows.push({ type: 'step', block });
+      } else if (block.type === 'section') {
+        rows.push({ type: 'section', block });
+      } else if (block.type === 'parts') {
+        rows.push({ type: 'parts', block });
+      }
+    }
+    return rows;
+  }
+
+  // ---------- Pagination ----------
+
+  // Estimate how many visual lines a callout's HTML will occupy at the current
+  // text width. We translate explicit <br>/<div>/<p> boundaries to newlines,
+  // strip remaining markup, then estimate wrap on each logical line based on
+  // an approximate character budget. Conservative on the high side so we
+  // don't under-allocate space.
+  function countCalloutLines(html) {
+    if (!html) return 1;
+    const normalized = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(div|p)\s*>/gi, '\n')
+      .replace(/<(div|p)[^>]*>/gi, '');
+    const plain = normalized
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    if (!plain.trim()) return 1;
+
+    // Available text width on the page is roughly:
+    //   page (8.5") - page padding (0.6") - badge (~0.85") - text padding (~0.2")
+    //   ≈ 6.85" ≈ 657px. At 11px font with mixed casing avg ~5.8px/char, ~113
+    // chars/line. Round down for safety.
+    const CHARS_PER_LINE = 100;
+
+    let totalLines = 0;
+    for (const line of plain.split('\n')) {
+      if (line.length === 0) {
+        totalLines += 1;
+      } else {
+        totalLines += Math.max(1, Math.ceil(line.length / CHARS_PER_LINE));
+      }
+    }
+    return Math.max(1, totalLines);
+  }
+
+  function estimateCalloutHeight(block) {
+    const lines = countCalloutLines(block.text || '');
+    if (lines <= 1) return CALLOUT_ROW_HEIGHT;
+    // Each additional wrapped line at 11px / line-height 1.35 ≈ 14.85px ≈ 0.155in.
+    // Add a touch of slop for safety.
+    const ADDITIONAL_LINE = 0.16;
+    return CALLOUT_ROW_HEIGHT + (lines - 1) * ADDITIONAL_LINE;
+  }
+
+  function estimatePartsHeight(block) {
+    const rows = (block && Array.isArray(block.rows)) ? block.rows.length : 1;
+    return PARTS_BASE_HEIGHT + Math.max(1, rows) * PARTS_ROW_HEIGHT;
+  }
+
+  function paginate(rows) {
+    const pages = [];
+    let cur = [];
+    let h = 0;
+    for (const row of rows) {
+      let rh;
+      if (row.type === 'callout') {
+        rh = estimateCalloutHeight(row.block);
+      } else if (row.type === 'section') {
+        rh = SECTION_ROW_HEIGHT;
+      } else if (row.type === 'parts') {
+        rh = estimatePartsHeight(row.block);
+      } else {
+        rh = STEP_ROW_HEIGHT;
+      }
+      const needed = (cur.length > 0 ? ROW_GAP : 0) + rh;
+      if (h + needed > PAGE_CONTENT_HEIGHT && cur.length > 0) {
+        pages.push(cur);
+        cur = [];
+        h = 0;
+      }
+      const addH = (cur.length > 0 ? ROW_GAP : 0) + rh;
+      cur.push(row);
+      h += addH;
+    }
+    if (cur.length > 0) pages.push(cur);
+    return pages;
+  }
+
+  // ---------- Render ----------
+  function render() {
+    // Assign global step numbers based on order in the document
+    let n = 0;
+    state.blocks.forEach(b => {
+      if (b.type === 'step') {
+        n += 1;
+        b._number = n;
+      }
+    });
+
+    const rows = blocksToRows(state.blocks);
+    let pages = paginate(rows);
+    if (pages.length === 0) pages = [[]];
+
+    const container = document.getElementById('pagesContainer');
+    container.innerHTML = '';
+    pages.forEach((pageRows, pageIdx) => {
+      container.appendChild(buildPageElement(pageRows, pageIdx, pages.length));
+    });
+
+    // Restore focus to a freshly-inserted/moved block, if any.
+    if (focusBlockIdAfterRender) {
+      const el = document.querySelector('[data-block-id="' + focusBlockIdAfterRender + '"]');
+      if (el) {
+        const editable = el.querySelector('[contenteditable]');
+        if (editable) {
+          editable.focus();
+          try {
+            const range = document.createRange();
+            range.selectNodeContents(editable);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          } catch (e) {
+            // Selection APIs can fail in obscure cases; not critical.
+          }
+        }
+      }
+      focusBlockIdAfterRender = null;
+    }
+  }
+
+  function buildPageElement(rows, pageIdx, totalPages) {
+    const pageEl = document.createElement('div');
+    pageEl.className = 'page';
+
+    pageEl.appendChild(buildHeader());
+
+    const content = document.createElement('div');
+    content.className = 'content-area';
+
+    if (rows.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state no-print';
+      empty.innerHTML =
+        '<div class="empty-state-title">Empty document</div>' +
+        '<div class="empty-state-body">Use the <strong>Insert Block</strong> menu in the sidebar to add steps and callouts.</div>';
+      content.appendChild(empty);
+    } else {
+      rows.forEach(row => content.appendChild(buildRowElement(row)));
+    }
+    pageEl.appendChild(content);
+
+    const stepCount = state.blocks.filter(b => b.type === 'step').length;
+    const calloutCount = state.blocks.filter(b => b.type === 'callout').length;
+    const sectionCount = state.blocks.filter(b => b.type === 'section').length;
+    const footer = document.createElement('div');
+    footer.className = 'page-footer';
+    let summary = stepCount + ' step' + (stepCount === 1 ? '' : 's');
+    if (calloutCount > 0) {
+      summary += ', ' + calloutCount + ' callout' + (calloutCount === 1 ? '' : 's');
+    }
+    if (sectionCount > 0) {
+      summary += ', ' + sectionCount + ' section' + (sectionCount === 1 ? '' : 's');
+    }
+    footer.innerHTML =
+      '<span>Page ' + (pageIdx + 1) + ' of ' + totalPages + '</span>' +
+      '<span>' + summary + '</span>';
+    pageEl.appendChild(footer);
+
+    return pageEl;
+  }
+
+  function buildHeader() {
+    const header = document.createElement('div');
+    header.className = 'header';
+
+    // ----- Logo -----
+    const logo = document.createElement('div');
+    logo.className = 'logo-area' + (state.logo ? ' has-image' : '');
+    logo.title = 'Click or drop an image to set the company logo';
+    logo.addEventListener('click', (e) => {
+      if (e.target.classList && e.target.classList.contains('clear-btn')) return;
+      handleLogoUpload();
+    });
+    attachDropTarget(logo, async (file) => {
+      try {
+        state.logo = await loadLogoFile(file);
+        saveState();
+        render();
+      } catch (err) {
+        alert('Could not load logo: ' + err.message);
+      }
+    });
+
+    if (state.logo) {
+      const img = document.createElement('img');
+      img.src = state.logo;
+      img.alt = 'Company logo';
+      logo.appendChild(img);
+      logo.appendChild(buildClearButton('Remove logo', (e) => {
+        e.stopPropagation();
+        state.logo = null;
+        saveState();
+        render();
+      }));
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload<br>company logo';
+      logo.appendChild(ph);
+    }
+    header.appendChild(logo);
+
+    // ----- Header info -----
+    const info = document.createElement('div');
+    info.className = 'header-info';
+
+    const title = document.createElement('input');
+    title.className = 'title-field';
+    title.type = 'text';
+    title.placeholder = 'Work Instruction Title (e.g., Turbocharger Cartridge Assembly)';
+    title.value = state.title || '';
+    title.dataset.headerField = 'title';
+    title.addEventListener('input', () => {
+      state.title = title.value;
+      saveState();
+      syncHeaderField('title', title.value, title);
+    });
+    info.appendChild(title);
+
+    const metaRow = document.createElement('div');
+    metaRow.className = 'meta-row';
+
+    const metaFields = [
+      { key: 'partNumber', label: 'Part #',    width: 110 },
+      { key: 'operation',  label: 'Operation', width: 130 },
+      { key: 'rev',        label: 'Rev',       width: 50  },
+      { key: 'date',       label: 'Date',      width: 90  }
+    ];
+
+    metaFields.forEach(f => {
+      const wrap = document.createElement('div');
+      wrap.className = 'meta-field';
+      const label = document.createElement('label');
+      label.textContent = f.label + ':';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.style.width = f.width + 'px';
+      input.value = state[f.key] || '';
+      input.dataset.headerField = f.key;
+      input.addEventListener('input', () => {
+        state[f.key] = input.value;
+        saveState();
+        syncHeaderField(f.key, input.value, input);
+      });
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      metaRow.appendChild(wrap);
+    });
+    info.appendChild(metaRow);
+    header.appendChild(info);
+
+    return header;
+  }
+
+  // The header is duplicated on every page; sync without re-rendering so
+  // typing doesn't lose focus.
+  function syncHeaderField(field, value, sourceEl) {
+    const matches = document.querySelectorAll('[data-header-field="' + field + '"]');
+    matches.forEach(el => {
+      if (el !== sourceEl && el.value !== value) el.value = value;
+    });
+  }
+
+  function buildRowElement(row) {
+    if (row.type === 'callout') {
+      const el = document.createElement('div');
+      el.className = 'row row-callout';
+      el.appendChild(buildCalloutElement(row.block));
+      return el;
+    }
+    if (row.type === 'section') {
+      const el = document.createElement('div');
+      el.className = 'row row-section';
+      el.appendChild(buildSectionElement(row.block));
+      return el;
+    }
+    if (row.type === 'parts') {
+      const el = document.createElement('div');
+      el.className = 'row row-parts';
+      el.appendChild(buildPartsElement(row.block));
+      return el;
+    }
+    // step
+    const el = document.createElement('div');
+    el.className = 'row row-step';
+    el.appendChild(buildStepElement(row.block));
+    return el;
+  }
+
+  function buildStepElement(block) {
+    const el = document.createElement('div');
+    el.className = 'step';
+    el.dataset.blockId = block.id;
+
+    const num = document.createElement('div');
+    num.className = 'step-number';
+    num.textContent = block._number != null ? block._number : '';
+    el.appendChild(num);
+
+    el.appendChild(buildBlockControls(block));
+
+    // ----- Image area -----
+    const imgArea = document.createElement('div');
+    imgArea.className = 'step-image' + (block.img ? ' has-image' : '');
+    imgArea.title = 'Click or drop an image';
+    imgArea.addEventListener('click', (e) => {
+      if (e.target.closest('.clear-btn') || e.target.closest('.block-controls')) return;
+      handleStepImageUpload(block.id);
+    });
+    attachDropTarget(imgArea, async (file) => {
+      try {
+        const dataUrl = await loadStepImageFile(file);
+        const b = findBlockById(block.id);
+        if (b) {
+          b.img = dataUrl;
+          saveState();
+          render();
+        }
+      } catch (err) {
+        alert('Could not load image: ' + err.message);
+      }
+    });
+
+    if (block.img) {
+      const img = document.createElement('img');
+      img.src = block.img;
+      img.alt = 'Step ' + (block._number != null ? block._number : '') + ' image';
+      imgArea.appendChild(img);
+      imgArea.appendChild(buildClearButton('Remove image', (e) => {
+        e.stopPropagation();
+        const b = findBlockById(block.id);
+        if (b) {
+          b.img = null;
+          saveState();
+          render();
+        }
+      }));
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload image<br><small>or drag &amp; drop</small>';
+      imgArea.appendChild(ph);
+    }
+    el.appendChild(imgArea);
+
+    // ----- Editable text -----
+    const text = document.createElement('div');
+    text.className = 'step-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type instruction text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Browsers leave a stray <br> when the field is fully cleared; reset
+      // so the placeholder reappears.
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b) {
+          b.text = '';
+          saveState();
+        }
+      }
+    });
+    el.appendChild(text);
+
+    return el;
+  }
+
+  function buildPartsElement(block) {
+    const el = document.createElement('div');
+    el.className = 'parts-block';
+    el.dataset.blockId = block.id;
+
+    // ----- Brown header bar -----
+    const header = document.createElement('div');
+    header.className = 'parts-header';
+    const headerLabel = document.createElement('span');
+    headerLabel.className = 'parts-header-label';
+    headerLabel.innerHTML = '\u25A4 &nbsp;PARTS LIST';
+    header.appendChild(headerLabel);
+    el.appendChild(header);
+
+    // ----- Block controls (move/delete the whole table) -----
+    el.appendChild(buildBlockControls(block));
+
+    // ----- Table -----
+    const table = document.createElement('table');
+    table.className = 'parts-table';
+
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+
+    block.columns.forEach((colName, colIdx) => {
+      const th = document.createElement('th');
+      th.appendChild(buildPartsCell(block.id, colName, {
+        isHeader: true,
+        colIdx: colIdx,
+        placeholder: 'Column',
+        onChange: (value) => {
+          const b = findBlockById(block.id);
+          if (b && Array.isArray(b.columns)) {
+            b.columns[colIdx] = value;
+            saveState();
+          }
+        }
+      }));
+      // Column delete (only if more than 1 column)
+      if (block.columns.length > 1) {
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'parts-col-delete no-print';
+        delBtn.title = 'Delete this column';
+        delBtn.textContent = '\u2715';  // ✕
+        delBtn.addEventListener('mousedown', e => e.preventDefault());
+        delBtn.addEventListener('click', () => removePartsColumn(block.id, colIdx));
+        th.appendChild(delBtn);
+      }
+      headerRow.appendChild(th);
+    });
+
+    // Right gutter for row-action buttons
+    const gutterTh = document.createElement('th');
+    gutterTh.className = 'parts-actions-col no-print';
+    headerRow.appendChild(gutterTh);
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    block.rows.forEach((row, rowIdx) => {
+      const tr = document.createElement('tr');
+      block.columns.forEach((_, colIdx) => {
+        const td = document.createElement('td');
+        td.appendChild(buildPartsCell(block.id, row[colIdx] || '', {
+          isHeader: false,
+          rowIdx: rowIdx,
+          colIdx: colIdx,
+          placeholder: '',
+          onChange: (value) => {
+            const b = findBlockById(block.id);
+            if (b && Array.isArray(b.rows) && b.rows[rowIdx]) {
+              b.rows[rowIdx][colIdx] = value;
+              saveState();
+            }
+          }
+        }));
+        tr.appendChild(td);
+      });
+      // Row delete in gutter (only if more than 1 row)
+      const gutterTd = document.createElement('td');
+      gutterTd.className = 'parts-actions-col no-print';
+      if (block.rows.length > 1) {
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'parts-row-delete';
+        delBtn.title = 'Delete this row';
+        delBtn.textContent = '\u2715';  // ✕
+        delBtn.addEventListener('mousedown', e => e.preventDefault());
+        delBtn.addEventListener('click', () => removePartsRow(block.id, rowIdx));
+        gutterTd.appendChild(delBtn);
+      }
+      tr.appendChild(gutterTd);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.appendChild(table);
+
+    // ----- Action footer (no-print) -----
+    const actions = document.createElement('div');
+    actions.className = 'parts-actions no-print';
+
+    const addRowBtn = document.createElement('button');
+    addRowBtn.type = 'button';
+    addRowBtn.textContent = '+ Row';
+    addRowBtn.title = 'Add a new row to the parts list';
+    addRowBtn.addEventListener('mousedown', e => e.preventDefault());
+    addRowBtn.addEventListener('click', () => addPartsRow(block.id));
+    actions.appendChild(addRowBtn);
+
+    const addColBtn = document.createElement('button');
+    addColBtn.type = 'button';
+    addColBtn.textContent = '+ Column';
+    addColBtn.title = 'Add a new column to the parts list';
+    addColBtn.addEventListener('mousedown', e => e.preventDefault());
+    addColBtn.addEventListener('click', () => addPartsColumn(block.id));
+    actions.appendChild(addColBtn);
+
+    const hint = document.createElement('span');
+    hint.className = 'parts-paste-hint';
+    hint.textContent = 'Tip: paste tabular data from Excel directly into a cell';
+    actions.appendChild(hint);
+
+    el.appendChild(actions);
+
+    return el;
+  }
+
+  function buildPartsCell(blockId, initialValue, opts) {
+    // Each cell is a single-line contenteditable div. Tab moves to next cell
+    // (browser default since each cell is a separate focusable contenteditable).
+    const cell = document.createElement('div');
+    cell.className = 'parts-cell' + (opts.isHeader ? ' parts-col-header' : '');
+    cell.contentEditable = 'true';
+    cell.spellcheck = !opts.isHeader;
+    cell.textContent = initialValue || '';
+    cell.dataset.blockId = blockId;
+    if (opts.placeholder) {
+      cell.dataset.placeholder = opts.placeholder;
+    }
+    // Single-line: block Enter
+    cell.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cell.blur();
+      }
+    });
+    // Paste handler: detect tab/newline-delimited data (e.g. from Excel) and
+    // distribute it across cells starting from the current one. Single-cell
+    // pastes still go in flat as plain text.
+    cell.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      if (!raw) return;
+
+      const grid = parseTabularPaste(raw);
+      const isMultiCell = grid.length > 1 || (grid.length === 1 && grid[0].length > 1);
+
+      if (!isMultiCell || opts.isHeader) {
+        // Single-cell paste, or paste into a column header: keep flat behavior.
+        const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (flat) {
+          document.execCommand('insertText', false, flat);
+        }
+        return;
+      }
+
+      // Multi-cell paste into a body cell: drop the grid into the table starting here.
+      pasteGridIntoTable(blockId, opts.rowIdx, opts.colIdx, grid);
+    });
+    cell.addEventListener('input', () => {
+      // Strip any HTML the user might have pasted that slipped through
+      const text = cell.textContent;
+      opts.onChange(text);
+    });
+    return cell;
+  }
+
+  // ---------- Parts: tabular paste handling ----------
+
+  // Parse plain-text tabular data (TSV / CSV / pipe-delimited / multi-space).
+  // Excel and Google Sheets put tab-separated values on the clipboard, with
+  // newlines between rows. We accept other reasonable delimiters too.
+  function parseTabularPaste(raw) {
+    // Normalize line endings, drop any trailing blank line that Excel adds.
+    const lines = raw.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
+    if (lines.length === 0) return [[]];
+
+    // Pick a delimiter: TSV first (Excel default), then CSV, then pipe, then
+    // 2+ spaces. Fall back to "single cell per line" if none match.
+    let delimiter = null;
+    if (lines.some(l => l.indexOf('\t') !== -1)) {
+      delimiter = '\t';
+    } else if (lines.some(l => l.indexOf(',') !== -1)) {
+      // CSV-ish. We use a real splitter that handles quoted fields.
+      return lines.map(parseCsvLine);
+    } else if (lines.some(l => l.indexOf('|') !== -1)) {
+      delimiter = '|';
+    } else if (lines.some(l => /\S {2,}\S/.test(l))) {
+      // Multi-space-delimited (e.g. fixed-width text)
+      return lines.map(l => l.split(/ {2,}/).map(c => c.trim()));
+    }
+
+    if (delimiter !== null) {
+      return lines.map(l => l.split(delimiter).map(c => c.trim()));
+    }
+    return lines.map(l => [l.trim()]);
+  }
+
+  // Split one CSV line, respecting "double quoted" fields (handles escaped "")
+  function parseCsvLine(line) {
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQuotes = false; }
+        } else {
+          cur += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          out.push(cur.trim());
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  // Drop a 2D grid of values into the table starting at (rowIdx, colIdx).
+  // Grows rows and columns as needed so nothing is silently truncated.
+  function pasteGridIntoTable(blockId, rowIdx, colIdx, grid) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (typeof rowIdx !== 'number' || typeof colIdx !== 'number') return;
+
+    const rowsNeeded = grid.length;
+    const colsNeeded = grid.reduce((m, r) => Math.max(m, r.length), 0);
+    if (rowsNeeded === 0 || colsNeeded === 0) return;
+
+    // Grow columns if pasting wider than the table
+    while (b.columns.length < colIdx + colsNeeded) {
+      b.columns.push('Column ' + (b.columns.length + 1));
+      b.rows.forEach(r => r.push(''));
+    }
+    // Grow rows if pasting taller than the table
+    while (b.rows.length < rowIdx + rowsNeeded) {
+      b.rows.push(Array(b.columns.length).fill(''));
+    }
+    // Stamp values
+    for (let r = 0; r < rowsNeeded; r++) {
+      const targetRow = rowIdx + r;
+      const sourceRow = grid[r] || [];
+      for (let c = 0; c < colsNeeded; c++) {
+        const targetCol = colIdx + c;
+        const v = (sourceRow[c] == null) ? '' : String(sourceRow[c]);
+        b.rows[targetRow][targetCol] = v;
+      }
+    }
+
+    saveState();
+    // Re-render so the grown cells show up; restore focus to the anchor cell
+    // afterwards so users can keep typing there.
+    focusBlockIdAfterRender = blockId;
+    render();
+
+    // Defer focus restore until after the render so the new DOM is in place.
+    setTimeout(() => {
+      const sel = '.parts-block[data-block-id="' + blockId + '"] tbody tr:nth-child(' + (rowIdx + 1) + ') td:nth-child(' + (colIdx + 1) + ') .parts-cell';
+      const cell = document.querySelector(sel);
+      if (cell) cell.focus();
+    }, 0);
+  }
+
+  // ---------- Parts table operations ----------
+  function addPartsRow(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    b.rows.push(Array(b.columns.length).fill(''));
+    saveState();
+    render();
+  }
+
+  function removePartsRow(blockId, rowIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (b.rows.length <= 1) return;  // never delete the last row
+    if (rowIdx < 0 || rowIdx >= b.rows.length) return;
+    const hasData = b.rows[rowIdx].some(c => c && c.trim());
+    if (hasData && !confirm('Delete this row? Data will be lost.')) return;
+    b.rows.splice(rowIdx, 1);
+    saveState();
+    render();
+  }
+
+  function addPartsColumn(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    b.columns.push('Column ' + (b.columns.length + 1));
+    b.rows.forEach(r => r.push(''));
+    saveState();
+    render();
+  }
+
+  function removePartsColumn(blockId, colIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (b.columns.length <= 1) return;  // never delete the last column
+    if (colIdx < 0 || colIdx >= b.columns.length) return;
+    const hasData = b.rows.some(r => r[colIdx] && r[colIdx].trim());
+    if (hasData && !confirm('Delete this column? Data will be lost.')) return;
+    b.columns.splice(colIdx, 1);
+    b.rows.forEach(r => r.splice(colIdx, 1));
+    saveState();
+    render();
+  }
+
+  function buildSectionElement(block) {
+    const el = document.createElement('div');
+    el.className = 'section-header';
+    el.dataset.blockId = block.id;
+
+    const text = document.createElement('div');
+    text.className = 'section-header-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Section title';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    // Single-line: block newline insertion
+    text.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        text.blur();
+      }
+    });
+    // Strip newlines/formatting from pasted content
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (flat) {
+        document.execCommand('insertText', false, flat);
+      }
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b) {
+          b.text = '';
+          saveState();
+        }
+      }
+    });
+    el.appendChild(text);
+
+    el.appendChild(buildBlockControls(block));
+
+    return el;
+  }
+
+  function buildCalloutElement(block) {
+    const meta = CALLOUT_KINDS[block.kind] || CALLOUT_KINDS.note;
+    const el = document.createElement('div');
+    el.className = 'callout callout-' + (CALLOUT_KINDS[block.kind] ? block.kind : 'note');
+    el.dataset.blockId = block.id;
+
+    const badge = document.createElement('div');
+    badge.className = 'callout-badge';
+    badge.textContent = meta.icon + '  ' + meta.label;
+    el.appendChild(badge);
+
+    const text = document.createElement('div');
+    text.className = 'callout-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type ' + meta.label.toLowerCase() + ' text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    // Strip rich formatting from pasted content but preserve newlines
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      if (raw) {
+        document.execCommand('insertText', false, raw);
+      }
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Browsers leave a stray <br> when the field is fully cleared; reset
+      // so the placeholder reappears.
+      const b = findBlockById(block.id);
+      if (!b) return;
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        b.text = '';
+        saveState();
+      }
+      // Defer the re-render so removing the focused element doesn't disrupt
+      // the current event loop. This recomputes pagination based on the new
+      // (possibly multi-line) callout height.
+      setTimeout(() => render(), 0);
+    });
+    el.appendChild(text);
+
+    el.appendChild(buildBlockControls(block));
+
+    return el;
+  }
+
+  function buildBlockControls(block) {
+    const wrap = document.createElement('div');
+    wrap.className = 'block-controls no-print';
+
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '\u2191';
+    upBtn.title = 'Move up';
+    upBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moveBlock(block.id, -1);
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '\u2193';
+    downBtn.title = 'Move down';
+    downBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moveBlock(block.id, +1);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '\u2715';
+    delBtn.title = 'Delete';
+    delBtn.className = 'delete';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteBlock(block.id);
+    });
+
+    wrap.appendChild(upBtn);
+    wrap.appendChild(downBtn);
+    wrap.appendChild(delBtn);
+    return wrap;
+  }
+
+  function buildClearButton(title, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'clear-btn no-print';
+    btn.textContent = '\u2715';
+    btn.title = title;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function attachDropTarget(el, fileHandler) {
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      el.classList.add('dragover');
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('dragover');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('dragover');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Please drop an image file.');
+        return;
+      }
+      fileHandler(file);
+    });
+  }
+
+  // ---------- Upload handlers ----------
+  async function handleLogoUpload() {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      state.logo = await loadLogoFile(file);
+      saveState();
+      render();
+    } catch (err) {
+      alert('Could not load logo: ' + err.message);
+    }
+  }
+
+  async function handleStepImageUpload(blockId) {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      const dataUrl = await loadStepImageFile(file);
+      const b = findBlockById(blockId);
+      if (b) {
+        b.img = dataUrl;
+        saveState();
+        render();
+      }
+    } catch (err) {
+      alert('Could not load image: ' + err.message);
+    }
+  }
+
+  // ---------- Block operations ----------
+  function moveBlock(id, dir) {
+    const idx = findBlockIndex(id);
+    if (idx < 0) return;
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= state.blocks.length) return;
+    const removed = state.blocks.splice(idx, 1)[0];
+    state.blocks.splice(newIdx, 0, removed);
+    saveState();
+    focusBlockIdAfterRender = id;
+    render();
+  }
+
+  function deleteBlock(id) {
+    const block = findBlockById(id);
+    if (!block) return;
+    let hasContent = false;
+    if (block.type === 'step') {
+      hasContent = !!(block.img || (block.text && block.text.trim()));
+    } else if (block.type === 'callout') {
+      hasContent = !!(block.text && block.text.trim());
+    } else if (block.type === 'section') {
+      hasContent = !!(block.text && block.text.trim());
+    } else if (block.type === 'parts') {
+      hasContent = Array.isArray(block.rows) &&
+        block.rows.some(r => Array.isArray(r) && r.some(c => c && c.trim()));
+    }
+    if (hasContent) {
+      let label;
+      if (block.type === 'callout') {
+        label = (CALLOUT_KINDS[block.kind] ? CALLOUT_KINDS[block.kind].label : 'callout').toLowerCase() + ' callout';
+      } else if (block.type === 'section') {
+        label = 'section header';
+      } else if (block.type === 'parts') {
+        label = 'parts list';
+      } else {
+        label = 'step';
+      }
+      if (!confirm('Delete this ' + label + '?')) return;
+    }
+    state.blocks = state.blocks.filter(b => b.id !== id);
+    if (lastFocusedBlockId === id) {
+      lastFocusedBlockId = null;
+      lastFocusedEditable = null;
+    }
+    saveState();
+    render();
+  }
+
+  function insertBlockAfter(referenceId, newBlock) {
+    const idx = referenceId ? findBlockIndex(referenceId) : -1;
+    if (idx < 0) {
+      state.blocks.push(newBlock);
+    } else {
+      state.blocks.splice(idx + 1, 0, newBlock);
+    }
+    saveState();
+    focusBlockIdAfterRender = newBlock.id;
+    render();
+  }
+
+  function addStep() {
+    insertBlockAfter(lastFocusedBlockId, createStepBlock());
+  }
+
+  function addCallout(kind) {
+    if (!CALLOUT_KINDS[kind]) {
+      console.warn('Unknown callout kind:', kind);
+      return;
+    }
+    insertBlockAfter(lastFocusedBlockId, createCalloutBlock(kind));
+  }
+
+  function addSection() {
+    insertBlockAfter(lastFocusedBlockId, createSectionBlock());
+  }
+
+  function addParts() {
+    insertBlockAfter(lastFocusedBlockId, createPartsBlock());
+  }
+
+  // ---------- Document-level operations ----------
+  function newDocument() {
+    if (!confirm('Clear ALL content and start a fresh document?\n\n(The logo will be kept.)')) return;
+    const savedLogo = state.logo;
+    state = createEmptyState();
+    state.logo = savedLogo;
+    lastFocusedBlockId = null;
+    lastFocusedEditable = null;
+    saveState();
+    render();
+  }
+
+  // ---------- Export / Import ----------
+  function exportTemplate() {
+    try {
+      const json = JSON.stringify(state, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (state.title || 'work_instruction')
+        .replace(/[^a-z0-9_.-]/gi, '_')
+        .slice(0, 60) || 'work_instruction';
+      a.href = url;
+      a.download = safeName + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      alert('Save failed: ' + e.message);
+    }
+  }
+
+  async function importTemplate() {
+    const file = await pickFile('.json,application/json');
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onerror = () => alert('Failed to read file.');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        let next = parsed;
+        // If it's a legacy file, migrate.
+        if (!Array.isArray(parsed.blocks)) {
+          next = migrateLegacyState(parsed);
+        }
+        if (!next || !Array.isArray(next.blocks)) {
+          throw new Error('File does not contain valid template data.');
+        }
+        if (!confirm('Replace current document with the loaded file?')) return;
+        state = normalizeState(next);
+        lastFocusedBlockId = null;
+        lastFocusedEditable = null;
+        saveState();
+        render();
+      } catch (err) {
+        alert('Could not load file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- Toolbar wiring ----------
+  const ICON_HTML = {
+    warning: '<span class="wi-icon wi-warning">\u26A0 WARNING</span>',
+    caution: '<span class="wi-icon wi-caution">\u26A0 CAUTION</span>',
+    inspect: '<span class="wi-icon wi-inspect">\u25C9 INSPECT</span>',
+    torque:  '<span class="wi-icon wi-torque">\u2699 TORQUE</span>'
+  };
+
+  function setupFocusTracking() {
+    document.addEventListener('focusin', (e) => {
+      const el = e.target;
+      if (el && el.classList && el.classList.contains('rich-text-editor')) {
+        lastFocusedEditable = el;
+        lastFocusedBlockId = el.dataset.blockId || null;
+      }
+    });
+  }
+
+  function setupBlockToolbar() {
+    document.querySelectorAll('.sidebar [data-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const kind = btn.dataset.add;
+        if (kind === 'step') {
+          addStep();
+        } else if (kind === 'callout') {
+          addCallout(btn.dataset.kind);
+        } else if (kind === 'section') {
+          addSection();
+        } else if (kind === 'parts') {
+          addParts();
+        }
+      });
+    });
+  }
+
+  function setupFormatToolbar() {
+    // Prevent the format buttons from stealing focus from the editor.
+    // Scope: only the format-related controls in the sidebar (not the block insert buttons).
+    const fmtSelectors = '.sidebar [data-cmd], .sidebar [data-icon]';
+    document.querySelectorAll(fmtSelectors).forEach(btn => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+    });
+
+    document.querySelectorAll('.sidebar [data-cmd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        applyFormat(btn.dataset.cmd, btn.dataset.arg || null);
+      });
+    });
+
+    document.querySelectorAll('.sidebar [data-icon]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        insertIcon(btn.dataset.icon);
+      });
+    });
+  }
+
+  // ---------- Sidebar collapse / expand ----------
+  const SIDEBAR_STATE_KEY = 'workInstructionBuilder_v3_sidebar';
+
+  function setSidebarCollapsed(collapsed, persist) {
+    document.body.classList.toggle('sidebar-collapsed', !!collapsed);
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+    if (collapseBtn) collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    if (expandBtn)   expandBtn.setAttribute('aria-expanded',   collapsed ? 'false' : 'true');
+    if (persist) {
+      try {
+        localStorage.setItem(SIDEBAR_STATE_KEY, collapsed ? 'collapsed' : 'open');
+      } catch (e) {
+        // Ignore storage errors (private mode, quota, etc.) - the UI still works.
+      }
+    }
+  }
+
+  function setupSidebarToggle() {
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', () => setSidebarCollapsed(true, true));
+    }
+    if (expandBtn) {
+      expandBtn.addEventListener('click', () => setSidebarCollapsed(false, true));
+    }
+
+    // On mobile, default-collapse and dismiss-on-backdrop-tap.
+    if (isMobileViewport()) {
+      // Backdrop dismiss: any tap on the body but outside the sidebar closes it.
+      document.addEventListener('click', (e) => {
+        if (document.body.classList.contains('sidebar-collapsed')) return;
+        if (!isMobileViewport()) return;
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        if (e.target === expandBtn || (expandBtn && expandBtn.contains(e.target))) return;
+        if (sidebar.contains(e.target)) return;
+        // Don't auto-close when the user taps a focusable cell — they may
+        // want the sidebar's format buttons accessible afterwards.
+        // But still close on taps in clearly non-editing areas.
+        setSidebarCollapsed(true, false);
+      }, true);
+    }
+
+    // Restore prior state.
+    let saved = null;
+    try {
+      saved = localStorage.getItem(SIDEBAR_STATE_KEY);
+    } catch (e) {
+      saved = null;
+    }
+    // Default-collapsed on mobile if no saved preference exists.
+    let initialCollapsed;
+    if (saved === 'collapsed' || saved === 'open') {
+      initialCollapsed = (saved === 'collapsed');
+    } else {
+      initialCollapsed = isMobileViewport();
+    }
+    setSidebarCollapsed(initialCollapsed, false);
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+  }
+
+  // ---------- Mobile page-scale ----------
+  // Compute and apply a CSS scale so the 8.5in printed page fits within the
+  // current viewport width. The underlying layout stays at print dimensions.
+  function updatePageScale() {
+    const root = document.documentElement;
+    if (!isMobileViewport()) {
+      root.style.setProperty('--page-scale', '1');
+      root.style.setProperty('--page-margin-fix', '0px');
+      return;
+    }
+    // 8.5in at 96dpi = 816px. Subtract a small horizontal padding for breathing room.
+    const PAGE_WIDTH_PX = 816;
+    const available = Math.max(280, window.innerWidth - 16);
+    const scale = Math.min(1, available / PAGE_WIDTH_PX);
+    root.style.setProperty('--page-scale', scale.toFixed(4));
+    // Because we use transform: scale(), the element still occupies full
+    // unscaled height in the document flow. Compensate so subsequent pages
+    // don't have huge empty gaps below them.
+    // 11in at 96dpi = 1056px. Empty space below scaled page = 1056 * (1 - scale).
+    const PAGE_HEIGHT_PX = 1056;
+    const negativeMargin = -PAGE_HEIGHT_PX * (1 - scale);
+    root.style.setProperty('--page-margin-fix', negativeMargin.toFixed(0) + 'px');
+  }
+
+  function applyFormat(cmd, arg) {
+    if (!lastFocusedEditable) {
+      showToast('Click into a text area first');
+      return;
+    }
+    try {
+      lastFocusedEditable.focus();
+      // styleWithCSS=true emits inline CSS instead of deprecated <font> tags.
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand(cmd, false, arg);
+      const evt = new Event('input', { bubbles: true });
+      lastFocusedEditable.dispatchEvent(evt);
+    } catch (err) {
+      console.warn('Format command failed:', cmd, err);
+    }
+  }
+
+  function insertIcon(type) {
+    const html = ICON_HTML[type];
+    if (!html) return;
+    if (!lastFocusedEditable) {
+      showToast('Click into a text area first');
+      return;
+    }
+    try {
+      lastFocusedEditable.focus();
+      document.execCommand('insertHTML', false, html + '&nbsp;');
+      const evt = new Event('input', { bubbles: true });
+      lastFocusedEditable.dispatchEvent(evt);
+    } catch (err) {
+      console.warn('Icon insert failed:', type, err);
+    }
+  }
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // ---------- Init ----------
+  window.exportTemplate = exportTemplate;
+  window.importTemplate = importTemplate;
+  window.newDocument = newDocument;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadState();
+    render();
+    setupFocusTracking();
+    setupBlockToolbar();
+    setupFormatToolbar();
+    setupSidebarToggle();
+    updatePageScale();
+  });
+
+  // Recompute scale on resize / orientation change.
+  let _resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (_resizeTimer) clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+      updatePageScale();
+    }, 120);
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(updatePageScale, 200);
+  });
+})();
+</script>
+
+</body>
+</html>

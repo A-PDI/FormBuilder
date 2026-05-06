@@ -1,0 +1,17 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# This file lets Render auto-configure the service from the repo, instead of
+# requiring you to set everything in the dashboard. Optional.
+
+services:
+  - type: web
+    name: pdi-work-instruction-builder
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0

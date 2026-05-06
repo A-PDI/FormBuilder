@@ -1,0 +1,16 @@
+{
+  "name": "pdi-work-instruction-builder",
+  "version": "1.0.0",
+  "description": "PDI Work Instruction Builder - laminated shop-floor instruction sheets",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
