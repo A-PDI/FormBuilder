@@ -271,6 +271,18 @@
     .sidebar-block-list .add-parts   { background: var(--charcoal); color: white; border-color: var(--charcoal); }
     .sidebar-block-list .add-inspect { background: var(--cyan);   color: white; border-color: var(--cyan); }
     .sidebar-block-list .add-measure { background: var(--magenta); color: white; border-color: var(--magenta); }
+    .sidebar-block-list .add-photoarray {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+    .sidebar-block-list .add-textbox {
+      background: white;
+      color: var(--charcoal);
+      border: 1px dashed var(--steel);
+      font-weight: 500;
+      font-style: italic;
+    }
     .sidebar-block-list .add-section {
       background: white;
       color: var(--navy);
@@ -385,7 +397,7 @@
       height: 11in;
       background: white;
       box-shadow: 0 4px 16px rgba(0,0,0,0.22);
-      padding: 0.30in;
+      padding: 0.25in;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -493,8 +505,8 @@
     }
 
     .row-step {
-      flex: 0 0 1.85in;
-      height: 1.85in;
+      flex: 0 0 auto;
+      min-height: 2.60in;
     }
 
     .row-callout {
@@ -510,6 +522,154 @@
     .row-parts {
       flex: 0 0 auto;
       min-height: 0.40in;
+    }
+
+    .row-photoarray {
+      flex: 0 0 auto;
+      min-height: 2.60in;
+    }
+
+    .row-textbox {
+      flex: 0 0 auto;
+      min-height: 0.50in;
+    }
+
+    /* ---------- Photo array block ---------- */
+    .photoarray-block {
+      background: white;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.10in;
+    }
+    .photoarray-row {
+      display: grid;
+      grid-template-columns: repeat(3, 2.50in);
+      gap: 0.10in;
+      justify-content: center;
+      height: 2.50in;
+    }
+    .photoarray-cell {
+      background: var(--frost);
+      border: 1px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+    }
+    .photoarray-cell:hover { background: #dde4ee; }
+    .photoarray-cell:focus {
+      outline: 2px solid var(--navy);
+      outline-offset: 2px;
+      background: #dde4ee;
+    }
+    .photoarray-cell:focus:not(.has-image) { background: var(--frost); }
+    .photoarray-cell.has-image { background: white; border-style: solid; border-color: var(--frost); }
+    .photoarray-cell.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
+    .photoarray-cell img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .photoarray-cell .placeholder {
+      color: #888;
+      font-size: 10px;
+      text-align: center;
+      padding: 4px;
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    .photoarray-cell .clear-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.65);
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .photoarray-cell:hover .clear-btn { display: block; }
+    /* Per-row delete: ✕ button at right edge of each row, hidden in print */
+    .photoarray-row-delete {
+      position: absolute;
+      top: 50%;
+      right: -22px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--danger);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      visibility: hidden;
+      z-index: 2;
+    }
+    .photoarray-row-wrapper {
+      position: relative;
+    }
+    .photoarray-row-wrapper:hover .photoarray-row-delete {
+      visibility: visible;
+    }
+    /* Add-row button (no-print) */
+    .photoarray-add-row {
+      align-self: flex-start;
+      margin-top: 2px;
+      padding: 4px 12px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .photoarray-add-row:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+
+    /* ---------- Plain text box block ---------- */
+    .textbox-block {
+      background: white;
+      border: 1px solid var(--steel);
+      border-radius: 3px;
+      padding: 6px 10px;
+      position: relative;
+      min-height: 0.50in;
+    }
+    .textbox-text {
+      outline: none;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--charcoal);
+      cursor: text;
+      min-height: 18px;
+    }
+    .textbox-text:focus { background: rgba(232, 235, 240, 0.4); border-radius: 2px; }
+    .textbox-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
     }
 
     /* ---------- Parts list table block ---------- */
@@ -735,7 +895,7 @@
       overflow: visible;            /* allow step-number tab to extend above */
       position: relative;
       background: white;
-      height: 100%;
+      height: 2.60in;
     }
 
     .step-number {
@@ -761,7 +921,7 @@
     }
 
     .step-image {
-      flex: 0 0 3.85in;             /* fixed width, image stays consistent */
+      flex: 0 0 2.50in;             /* fixed square; image stays consistent */
       background: var(--frost);
       border: 1px dashed var(--steel);
       border-radius: 3px;
@@ -930,7 +1090,9 @@
     .step:hover > .block-controls,
     .callout:hover > .block-controls,
     .section-header:hover > .block-controls,
-    .parts-block:hover > .block-controls {
+    .parts-block:hover > .block-controls,
+    .photoarray-block:hover > .block-controls,
+    .textbox-block:hover > .block-controls {
       opacity: 1;
     }
     .block-controls button {
@@ -1012,7 +1174,7 @@
     .toast.show { opacity: 1; }
 
     /* ---------- Mobile / narrow-screen layout ---------- */
-    @media (max-width: 900px) {
+    @media screen and (max-width: 900px) {
       body {
         /* No fixed-sidebar offset on small screens; sidebar overlays the page when opened. */
         padding-left: 0;
@@ -1084,9 +1246,13 @@
       /* Touch target hint for hover-only controls */
       .step-image .clear-btn,
       .parts-row-delete,
-      .parts-col-delete {
+      .parts-col-delete,
+      .photoarray-cell .clear-btn,
+      .photoarray-row-delete {
         visibility: visible;
       }
+      /* Photo array: clear-btn is display:none by default; on mobile always show */
+      .photoarray-cell .clear-btn { display: block; }
       /* Permanently show block controls on mobile (touch can't hover) */
       .block-controls { opacity: 1; }
       .block-controls button {
@@ -1096,7 +1262,7 @@
       }
     }
 
-    @media (max-width: 600px) {
+    @media screen and (max-width: 600px) {
       .topbar h1 { display: none; }
       .topbar button { padding: 8px 10px; font-size: 12px; }
       .topbar .btn-label-full { display: none; }
@@ -1116,11 +1282,25 @@
         padding: 0 !important;
       }
       .topbar, .sidebar, .sidebar-backdrop, .no-print, .block-controls { display: none !important; }
-      .step-image .clear-btn, .logo-area .clear-btn { display: none !important; }
+      .step-image .clear-btn, .logo-area .clear-btn,
+      .photoarray-cell .clear-btn, .photoarray-row-delete,
+      .photoarray-add-row { display: none !important; }
+      /* Photo array: hide empty cell placeholder text in print, and drop the
+         dashed border on cells that don't have an image. */
+      .photoarray-cell:not(.has-image) .placeholder { display: none; }
+      .photoarray-cell:not(.has-image) {
+        background: white;
+        border: 1px solid #bbb;
+      }
       .pages-container { padding: 0; gap: 0; }
       .page {
         box-shadow: none;
-        margin: 0;
+        margin: 0 !important;
+        /* Defensive: undo any mobile transform/margin that might leak into
+           print (Safari iOS especially) so the page renders at full 8.5x11
+           and doesn't leave blank space below it. */
+        transform: none !important;
+        margin-bottom: 0 !important;
         page-break-after: always;
         break-after: page;
       }
@@ -1135,8 +1315,12 @@
       .title-field::placeholder,
       .meta-field input::placeholder { color: transparent !important; }
       .step-text:empty::before,
-      .callout-text:empty::before { content: ''; }
-      .step-text:focus, .callout-text:focus { background: transparent; }
+      .callout-text:empty::before,
+      .textbox-text:empty::before,
+      .section-header-text:empty::before { content: ''; }
+      .step-text:focus, .callout-text:focus, .textbox-text:focus { background: transparent; }
+      /* Textbox: drop visible border in print so it reads as plain text */
+      .textbox-block { border-color: transparent !important; padding: 0 !important; }
       .empty-state { display: none; }
     }
   </style>
@@ -1178,6 +1362,8 @@
     <div class="sidebar-block-list">
       <button class="add-section" data-add="section" type="button" title="Add a section header (separates document sections)">+ SECTION</button>
       <button class="add-step" data-add="step" type="button" title="Add a step block (image + text)">+ Step</button>
+      <button class="add-photoarray" data-add="photoarray" type="button" title="Add a photo array (2-column grid of images)">+ ▦ PHOTO ARRAY</button>
+      <button class="add-textbox" data-add="textbox" type="button" title="Add a plain text box (no header or icon)">+ Text Box</button>
       <button class="add-warning" data-add="callout" data-kind="warning" type="button" title="Add a WARNING banner (risk of injury)">+ ⚠ WARNING</button>
       <button class="add-caution" data-add="callout" data-kind="caution" type="button" title="Add a CAUTION banner (risk of equipment damage)">+ ⚠ CAUTION</button>
       <button class="add-note"    data-add="callout" data-kind="note"    type="button" title="Add a NOTE banner (general info)">+ ℹ NOTE</button>
@@ -1241,7 +1427,7 @@
   // Available content height per page is ~8.98in (11 - 0.7 padding - ~1.07 header
   // - ~0.25 footer). Use 8.9 as a safety threshold.
   const PAGE_CONTENT_HEIGHT = 9.0;
-  const STEP_ROW_HEIGHT     = 1.85;
+  const STEP_ROW_HEIGHT     = 2.60;
   const CALLOUT_ROW_HEIGHT  = 0.32;
   const SECTION_ROW_HEIGHT  = 0.40;
   const ROW_GAP             = 0.10;
@@ -1331,6 +1517,38 @@
     };
   }
 
+  function createPhotoArrayBlock(rows) {
+    // rows is an array of row arrays; each row array holds 3 entries (cells),
+    // each being either a data-URL string or null.
+    let rs;
+    if (Array.isArray(rows) && rows.length > 0) {
+      rs = rows.map(r => {
+        const out = [null, null, null];
+        if (Array.isArray(r)) {
+          out[0] = (typeof r[0] === 'string') ? r[0] : null;
+          out[1] = (typeof r[1] === 'string') ? r[1] : null;
+          out[2] = (typeof r[2] === 'string') ? r[2] : null;
+        }
+        return out;
+      });
+    } else {
+      rs = [[null, null, null]];
+    }
+    return {
+      id: genId(),
+      type: 'photoarray',
+      rows: rs
+    };
+  }
+
+  function createTextBoxBlock(text) {
+    return {
+      id: genId(),
+      type: 'textbox',
+      text: text == null ? '' : text
+    };
+  }
+
   function createEmptyState() {
     return {
       logo: null,
@@ -1351,7 +1569,7 @@
     if (Array.isArray(old.blocks)) {
       const blocks = old.blocks.filter(b => {
         if (!b) return false;
-        if (b.type !== 'step' && b.type !== 'callout' && b.type !== 'section' && b.type !== 'parts') return false;
+        if (b.type !== 'step' && b.type !== 'callout' && b.type !== 'section' && b.type !== 'parts' && b.type !== 'photoarray' && b.type !== 'textbox') return false;
         if (b.type === 'callout') return true;  // keep all callouts (incl. legacy parts callouts)
         if (b.type === 'parts') return true;    // keep all parts tables
         if (b.type === 'section') {
@@ -1425,12 +1643,21 @@
       return b;
     });
 
-    s.blocks = s.blocks.filter(b => b && (b.type === 'step' || b.type === 'callout' || b.type === 'section' || b.type === 'parts'));
+    s.blocks = s.blocks.filter(b => b && (
+      b.type === 'step' ||
+      b.type === 'callout' ||
+      b.type === 'section' ||
+      b.type === 'parts' ||
+      b.type === 'photoarray' ||
+      b.type === 'textbox'
+    ));
     s.blocks.forEach(b => {
       if (!b.id) b.id = genId();
       if (b.type === 'step') {
         if (typeof b.img === 'undefined') b.img = null;
         if (typeof b.text !== 'string') b.text = '';
+        // Drop any legacy orientation field; the layout is now fixed at 2.5x2.5.
+        if ('orientation' in b) delete b.orientation;
       } else if (b.type === 'callout') {
         if (!CALLOUT_KINDS[b.kind]) b.kind = 'note';
         if (typeof b.text !== 'string') b.text = '';
@@ -1456,6 +1683,24 @@
         if (b.rows.length === 0) {
           b.rows = [Array(b.columns.length).fill('')];
         }
+      } else if (b.type === 'photoarray') {
+        if (!Array.isArray(b.rows)) b.rows = [];
+        b.rows = b.rows.map(r => {
+          const out = [null, null, null];
+          if (Array.isArray(r)) {
+            // Migrate from any prior 2-cell layout: copy what we have.
+            for (let i = 0; i < Math.min(r.length, 3); i++) {
+              out[i] = (typeof r[i] === 'string') ? r[i] : null;
+            }
+          }
+          return out;
+        });
+        if (b.rows.length === 0) {
+          b.rows = [[null, null, null]];
+        }
+        if ('orientation' in b) delete b.orientation;
+      } else if (b.type === 'textbox') {
+        if (typeof b.text !== 'string') b.text = '';
       }
     });
     return s;
@@ -1601,6 +1846,10 @@
         rows.push({ type: 'section', block });
       } else if (block.type === 'parts') {
         rows.push({ type: 'parts', block });
+      } else if (block.type === 'photoarray') {
+        rows.push({ type: 'photoarray', block });
+      } else if (block.type === 'textbox') {
+        rows.push({ type: 'textbox', block });
       }
     }
     return rows;
@@ -1660,6 +1909,39 @@
     return PARTS_BASE_HEIGHT + Math.max(1, rows) * PARTS_ROW_HEIGHT;
   }
 
+  // Photo array: each row holds three 2.50in square cells, separated by 0.10in gaps.
+  function estimatePhotoArrayHeight(block) {
+    const rows = (block && Array.isArray(block.rows)) ? Math.max(1, block.rows.length) : 1;
+    const PHOTOROW = 2.50;
+    const PHOTOGAP = 0.10;
+    return rows * PHOTOROW + (rows - 1) * PHOTOGAP;
+  }
+
+  // Text box: estimate by line count (10–11px text wraps at ~110 chars/line in
+  // a full-width row). Conservative on the high side.
+  function estimateTextBoxHeight(block) {
+    if (!block || typeof block.text !== 'string' || !block.text.trim()) {
+      return 0.50;
+    }
+    const plain = block.text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(div|p)\s*>/gi, '\n')
+      .replace(/<(div|p)[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+    const CHARS_PER_LINE = 110;
+    let lines = 0;
+    for (const line of plain.split('\n')) {
+      lines += line.length === 0 ? 1 : Math.ceil(line.length / CHARS_PER_LINE);
+    }
+    lines = Math.max(1, lines);
+    // 11px font / 1.4 line-height = ~15.4px ≈ 0.16in per line; plus 0.18in padding/border.
+    return 0.18 + lines * 0.16;
+  }
+
   function paginate(rows) {
     const pages = [];
     let cur = [];
@@ -1672,6 +1954,10 @@
         rh = SECTION_ROW_HEIGHT;
       } else if (row.type === 'parts') {
         rh = estimatePartsHeight(row.block);
+      } else if (row.type === 'photoarray') {
+        rh = estimatePhotoArrayHeight(row.block);
+      } else if (row.type === 'textbox') {
+        rh = estimateTextBoxHeight(row.block);
       } else {
         rh = STEP_ROW_HEIGHT;
       }
@@ -1712,20 +1998,41 @@
 
     // Restore focus to a freshly-inserted/moved block, if any.
     if (focusBlockIdAfterRender) {
+      const block = findBlockById(focusBlockIdAfterRender);
       const el = document.querySelector('[data-block-id="' + focusBlockIdAfterRender + '"]');
-      if (el) {
-        const editable = el.querySelector('[contenteditable]');
-        if (editable) {
-          editable.focus();
-          try {
-            const range = document.createRange();
-            range.selectNodeContents(editable);
-            range.collapse(false);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-          } catch (e) {
-            // Selection APIs can fail in obscure cases; not critical.
+      if (el && block) {
+        let target = null;
+        // Pick the right entry point per block type.
+        if (block.type === 'parts') {
+          // Skip column headers; land in the first body data cell.
+          target = el.querySelector('tbody .parts-cell');
+        } else if (block.type === 'photoarray') {
+          // No editable text; focus the first photo cell so the user can
+          // press Enter / Space (or just see where to click) to upload.
+          target = el.querySelector('.photoarray-cell');
+        } else {
+          // step / callout / section / textbox: focus the first rich-text editor
+          target = el.querySelector('.rich-text-editor');
+        }
+        if (target) {
+          target.focus();
+          // For contenteditable targets, place the caret at the end so the
+          // user can start typing immediately.
+          if (target.contentEditable === 'true' || target.isContentEditable) {
+            try {
+              const range = document.createRange();
+              range.selectNodeContents(target);
+              range.collapse(false);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            } catch (e) {
+              // Selection APIs can fail in obscure cases; not critical.
+            }
+          }
+          // Scroll the new block into view if it's off-screen.
+          if (typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
       }
@@ -1893,6 +2200,18 @@
       const el = document.createElement('div');
       el.className = 'row row-parts';
       el.appendChild(buildPartsElement(row.block));
+      return el;
+    }
+    if (row.type === 'photoarray') {
+      const el = document.createElement('div');
+      el.className = 'row row-photoarray';
+      el.appendChild(buildPhotoArrayElement(row.block));
+      return el;
+    }
+    if (row.type === 'textbox') {
+      const el = document.createElement('div');
+      el.className = 'row row-textbox';
+      el.appendChild(buildTextBoxElement(row.block));
       return el;
     }
     // step
@@ -2319,6 +2638,186 @@
     render();
   }
 
+  // ---------- Photo array element ----------
+  function buildPhotoArrayElement(block) {
+    const el = document.createElement('div');
+    el.className = 'photoarray-block';
+    el.dataset.blockId = block.id;
+
+    el.appendChild(buildBlockControls(block));
+
+    block.rows.forEach((row, rowIdx) => {
+      const rowWrap = document.createElement('div');
+      rowWrap.className = 'photoarray-row-wrapper';
+
+      const grid = document.createElement('div');
+      grid.className = 'photoarray-row';
+
+      [0, 1, 2].forEach(colIdx => {
+        grid.appendChild(buildPhotoArrayCell(block.id, rowIdx, colIdx, row[colIdx]));
+      });
+
+      rowWrap.appendChild(grid);
+
+      // Row-delete button (visible only when more than 1 row)
+      if (block.rows.length > 1) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'photoarray-row-delete no-print';
+        del.title = 'Delete this row';
+        del.textContent = '\u2715';
+        del.addEventListener('mousedown', e => e.preventDefault());
+        del.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removePhotoArrayRow(block.id, rowIdx);
+        });
+        rowWrap.appendChild(del);
+      }
+
+      el.appendChild(rowWrap);
+    });
+
+    // Add-row button (no-print)
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'photoarray-add-row no-print';
+    addBtn.textContent = '+ Row';
+    addBtn.title = 'Add a new row of two photos';
+    addBtn.addEventListener('mousedown', e => e.preventDefault());
+    addBtn.addEventListener('click', () => addPhotoArrayRow(block.id));
+    el.appendChild(addBtn);
+
+    return el;
+  }
+
+  function buildPhotoArrayCell(blockId, rowIdx, colIdx, imgDataUrl) {
+    const cell = document.createElement('div');
+    cell.className = 'photoarray-cell' + (imgDataUrl ? ' has-image' : '');
+    cell.title = 'Click or drop an image';
+    cell.tabIndex = 0;  // make focusable so render() can focus it after insert
+
+    cell.addEventListener('click', (e) => {
+      if (e.target.closest('.clear-btn')) return;
+      handlePhotoArrayUpload(blockId, rowIdx, colIdx);
+    });
+    // Keyboard activation: Enter or Space opens the upload picker
+    cell.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handlePhotoArrayUpload(blockId, rowIdx, colIdx);
+      }
+    });
+    attachDropTarget(cell, async (file) => {
+      try {
+        const dataUrl = await loadStepImageFile(file);
+        const b = findBlockById(blockId);
+        if (b && b.type === 'photoarray' && b.rows[rowIdx]) {
+          b.rows[rowIdx][colIdx] = dataUrl;
+          saveState();
+          render();
+        }
+      } catch (err) {
+        alert('Could not load image: ' + err.message);
+      }
+    });
+
+    if (imgDataUrl) {
+      const img = document.createElement('img');
+      img.src = imgDataUrl;
+      img.alt = 'Photo';
+      cell.appendChild(img);
+      cell.appendChild(buildClearButton('Remove image', (e) => {
+        e.stopPropagation();
+        const b = findBlockById(blockId);
+        if (b && b.type === 'photoarray' && b.rows[rowIdx]) {
+          b.rows[rowIdx][colIdx] = null;
+          saveState();
+          render();
+        }
+      }));
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload<br><small>or drag &amp; drop</small>';
+      cell.appendChild(ph);
+    }
+    return cell;
+  }
+
+  async function handlePhotoArrayUpload(blockId, rowIdx, colIdx) {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      const dataUrl = await loadStepImageFile(file);
+      const b = findBlockById(blockId);
+      if (b && b.type === 'photoarray' && b.rows[rowIdx]) {
+        b.rows[rowIdx][colIdx] = dataUrl;
+        saveState();
+        render();
+      }
+    } catch (err) {
+      alert('Could not load image: ' + err.message);
+    }
+  }
+
+  function addPhotoArrayRow(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'photoarray') return;
+    b.rows.push([null, null, null]);
+    saveState();
+    render();
+  }
+
+  function removePhotoArrayRow(blockId, rowIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'photoarray') return;
+    if (b.rows.length <= 1) return;
+    if (rowIdx < 0 || rowIdx >= b.rows.length) return;
+    const hasData = (b.rows[rowIdx][0] || b.rows[rowIdx][1] || b.rows[rowIdx][2]);
+    if (hasData && !confirm('Delete this row? Photos will be lost.')) return;
+    b.rows.splice(rowIdx, 1);
+    saveState();
+    render();
+  }
+
+  // ---------- Text box element ----------
+  function buildTextBoxElement(block) {
+    const el = document.createElement('div');
+    el.className = 'textbox-block';
+    el.dataset.blockId = block.id;
+
+    el.appendChild(buildBlockControls(block));
+
+    const text = document.createElement('div');
+    text.className = 'textbox-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      const b = findBlockById(block.id);
+      if (!b) return;
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        b.text = '';
+        saveState();
+      }
+      // Re-paginate so a multi-line text box correctly reflows.
+      setTimeout(() => render(), 0);
+    });
+    el.appendChild(text);
+
+    return el;
+  }
+
   function buildSectionElement(block) {
     const el = document.createElement('div');
     el.className = 'section-header';
@@ -2550,6 +3049,11 @@
     } else if (block.type === 'parts') {
       hasContent = Array.isArray(block.rows) &&
         block.rows.some(r => Array.isArray(r) && r.some(c => c && c.trim()));
+    } else if (block.type === 'photoarray') {
+      hasContent = Array.isArray(block.rows) &&
+        block.rows.some(r => Array.isArray(r) && r.some(c => !!c));
+    } else if (block.type === 'textbox') {
+      hasContent = !!(block.text && block.text.replace(/<[^>]*>/g, '').trim());
     }
     if (hasContent) {
       let label;
@@ -2559,6 +3063,10 @@
         label = 'section header';
       } else if (block.type === 'parts') {
         label = 'parts list';
+      } else if (block.type === 'photoarray') {
+        label = 'photo array';
+      } else if (block.type === 'textbox') {
+        label = 'text box';
       } else {
         label = 'step';
       }
@@ -2582,6 +3090,10 @@
     }
     saveState();
     focusBlockIdAfterRender = newBlock.id;
+    // Collapse the hamburger menu so the user can immediately interact with
+    // the new block. We don't persist this — if they explicitly opened the
+    // menu, they may want it open again on next reload.
+    setSidebarCollapsed(true, false);
     render();
   }
 
@@ -2603,6 +3115,14 @@
 
   function addParts() {
     insertBlockAfter(lastFocusedBlockId, createPartsBlock());
+  }
+
+  function addPhotoArray() {
+    insertBlockAfter(lastFocusedBlockId, createPhotoArrayBlock());
+  }
+
+  function addTextBox() {
+    insertBlockAfter(lastFocusedBlockId, createTextBoxBlock());
   }
 
   // ---------- Document-level operations ----------
@@ -2697,6 +3217,10 @@
           addSection();
         } else if (kind === 'parts') {
           addParts();
+        } else if (kind === 'photoarray') {
+          addPhotoArray();
+        } else if (kind === 'textbox') {
+          addTextBox();
         }
       });
     });
