@@ -1850,6 +1850,13 @@
           border-top: 1px solid #ddd;
           background: transparent;
         }
+        /* When a caption has no value, hide the input entirely so the image
+         area expands to fill the full cell height. This also dodges the iOS
+         Safari quirk where `::placeholder { color: transparent }` is
+         sometimes ignored, leaving the literal word "Caption" on the page. */
+        .photoarray-caption:placeholder-shown {
+          display: none;
+        }
         .step-text:empty::before,
         .callout-text:empty::before,
         .textbox-text:empty::before,
