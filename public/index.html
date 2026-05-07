@@ -860,9 +860,13 @@
         pointer-events: none;
         line-height: 1.25;
       }
+      /* Cell clear button anchored bottom-right. The block-level controls
+       (up / down / delete) live at the block's top-right, so anchoring the
+       cell clear button there caused them to overlap on the rightmost cell.
+       Bottom-right keeps the button reachable in every layout. */
       .photoarray-cell .clear-btn {
         position: absolute;
-        top: 3px;
+        bottom: 3px;
         right: 3px;
         background: rgba(0, 0, 0, 0.65);
         color: white;
@@ -880,73 +884,56 @@
         display: block;
       }
       /* Per-row delete: ✕ button at right edge of each row, hidden in print */
-      .photoarray-row-delete {
-        position: absolute;
-        top: 50%;
-        right: -22px;
-        transform: translateY(-50%);
-        width: 18px;
-        height: 18px;
-        padding: 0;
-        border: 1px solid var(--steel);
-        background: white;
-        color: var(--danger);
-        border-radius: 50%;
-        font-size: 10px;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: inherit;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-        visibility: hidden;
-        z-index: 2;
-      }
       .photoarray-row-wrapper {
         position: relative;
+        display: flex;
+        flex-direction: column;
       }
-      .photoarray-row-wrapper:hover .photoarray-row-delete {
-        visibility: visible;
+      /* Inline action strip below each row. Holds the "+ Add Photo" and
+       "Delete Row" buttons in plain sight (the previous floating-circle
+       design lived in the page gutter and was easy to miss).
+       Centered to the same width as the row above it. */
+      .photoarray-row-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+        width: 7.7in;
+        max-width: 100%;
+        margin: 4px auto 0;
+        min-height: 22px;
       }
-      /* "+" button to add another image to a partially-populated row. Sits in
-       the right gutter just above the row-delete button so they don't
-       collide. Hidden in print since it's an editor affordance. */
       .photoarray-add-image {
-        position: absolute;
-        top: 50%;
-        right: -22px;
-        transform: translateY(-50%);
-        width: 22px;
-        height: 22px;
-        padding: 0;
+        padding: 3px 10px;
         border: 1px solid var(--navy);
         background: white;
         color: var(--navy);
-        border-radius: 50%;
-        font-size: 16px;
-        font-weight: 700;
-        line-height: 1;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
         cursor: pointer;
         font-family: inherit;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-        z-index: 2;
-      }
-      /* If both buttons exist on the same row, stack them vertically.
-       Add-image goes above center, row-delete below. */
-      .photoarray-row-wrapper.has-add-image .photoarray-add-image {
-        top: calc(50% - 14px);
-      }
-      .photoarray-row-wrapper.has-add-image .photoarray-row-delete {
-        top: calc(50% + 14px);
+        line-height: 1.4;
       }
       .photoarray-add-image:hover {
         background: var(--navy);
         color: white;
+      }
+      .photoarray-row-delete {
+        padding: 3px 10px;
+        border: 1px solid var(--steel);
+        background: white;
+        color: var(--charcoal);
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        line-height: 1.4;
+      }
+      .photoarray-row-delete:hover {
+        border-color: var(--color-ember);
+        color: var(--color-ember);
       }
       /* Add-row button (no-print) */
       .photoarray-add-row {
@@ -3766,38 +3753,47 @@
 
             rowWrap.appendChild(grid);
 
-            // "+" button on partial rows so the user can add more without having
-            // to delete and re-create. Hidden on full or empty rows.
+            // Action strip below the row: holds the "+ Add Photo" and "Delete Row"
+            // buttons. Built inline so they're always visible (the previous
+            // floating-circle design lived in the page gutter and was easy to
+            // miss). Strip is rendered only when at least one action exists.
             const showAddBtn = populatedCount > 0 && populatedCount < 3;
-            if (showAddBtn) rowWrap.classList.add("has-add-image");
-            if (showAddBtn) {
-              const addBtn = document.createElement("button");
-              addBtn.type = "button";
-              addBtn.className = "photoarray-add-image no-print";
-              addBtn.title = "Add another image to this row";
-              addBtn.textContent = "+";
-              addBtn.addEventListener("mousedown", (e) => e.preventDefault());
-              addBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                // Append to the next null slot (which is `populatedCount`).
-                handlePhotoArrayUpload(block.id, rowIdx, populatedCount);
-              });
-              rowWrap.appendChild(addBtn);
-            }
+            const showDelBtn = block.rows.length > 1;
 
-            // Row-delete button (visible only when more than 1 row)
-            if (block.rows.length > 1) {
-              const del = document.createElement("button");
-              del.type = "button";
-              del.className = "photoarray-row-delete no-print";
-              del.title = "Delete this row";
-              del.textContent = "\u2715";
-              del.addEventListener("mousedown", (e) => e.preventDefault());
-              del.addEventListener("click", (e) => {
-                e.stopPropagation();
-                removePhotoArrayRow(block.id, rowIdx);
-              });
-              rowWrap.appendChild(del);
+            if (showAddBtn || showDelBtn) {
+              const actions = document.createElement("div");
+              actions.className = "photoarray-row-actions no-print";
+
+              if (showAddBtn) {
+                const addBtn = document.createElement("button");
+                addBtn.type = "button";
+                addBtn.className = "photoarray-add-image";
+                addBtn.title = "Add another image to this row";
+                addBtn.textContent = "+ Add Photo";
+                addBtn.addEventListener("mousedown", (e) => e.preventDefault());
+                addBtn.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  // Append to the next null slot (which is `populatedCount`).
+                  handlePhotoArrayUpload(block.id, rowIdx, populatedCount);
+                });
+                actions.appendChild(addBtn);
+              }
+
+              if (showDelBtn) {
+                const del = document.createElement("button");
+                del.type = "button";
+                del.className = "photoarray-row-delete";
+                del.title = "Delete this row";
+                del.textContent = "Delete Row";
+                del.addEventListener("mousedown", (e) => e.preventDefault());
+                del.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  removePhotoArrayRow(block.id, rowIdx);
+                });
+                actions.appendChild(del);
+              }
+
+              rowWrap.appendChild(actions);
             }
 
             el.appendChild(rowWrap);
