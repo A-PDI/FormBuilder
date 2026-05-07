@@ -819,12 +819,16 @@
         border: 1px dashed var(--steel);
         border-radius: 3px;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
         cursor: pointer;
         overflow: hidden;
         position: relative;
         min-height: 0;
+      }
+      /* Empty cell: center the placeholder text vertically and horizontally. */
+      .photoarray-cell:not(.has-image) {
+        align-items: center;
+        justify-content: center;
       }
       .photoarray-cell:hover {
         background: #dde4ee;
@@ -847,10 +851,46 @@
         border-color: var(--navy);
         border-style: solid;
       }
-      .photoarray-cell img {
+      /* Image area (only inside has-image cells). Takes all space the caption
+       isn't using; image scales to fit while preserving aspect ratio. */
+      .photoarray-cell-image {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+      .photoarray-cell-image img {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
+      }
+      /* Caption: single-line input pinned to the bottom of the cell. Renders as
+       plain italic text in print (border/background drop). */
+      .photoarray-caption {
+        flex: 0 0 auto;
+        border: none;
+        border-top: 1px solid var(--frost);
+        outline: none;
+        background: transparent;
+        text-align: center;
+        font-size: 11px;
+        font-style: italic;
+        color: var(--charcoal);
+        padding: 2px 6px;
+        width: 100%;
+        height: 20px;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      .photoarray-caption:focus {
+        background: rgba(232, 235, 240, 0.5);
+      }
+      .photoarray-caption::placeholder {
+        color: var(--steel);
+        font-style: italic;
       }
       .photoarray-cell .placeholder {
         color: #888;
@@ -1801,8 +1841,14 @@
           display: none;
         }
         .title-field::placeholder,
-        .meta-field input::placeholder {
+        .meta-field input::placeholder,
+        .photoarray-caption::placeholder {
           color: transparent !important;
+        }
+        /* Photo caption: keep the text, drop the editor chrome. */
+        .photoarray-caption {
+          border-top: 1px solid #ddd;
+          background: transparent;
         }
         .step-text:empty::before,
         .callout-text:empty::before,
@@ -2350,16 +2396,30 @@
         }
 
         function createPhotoArrayBlock(rows) {
-          // rows is an array of row arrays; each row array holds 3 entries (cells),
-          // each being either a data-URL string or null.
+          // rows is an array of row arrays; each row array holds 3 entries (cells).
+          // Each entry is either null or { src: dataUrl, caption: string }.
+          // Older callers may still pass plain string data URLs; we coerce those
+          // to the object form here so the rest of the code only deals with one
+          // shape.
+          function coerceCell(c) {
+            if (!c) return null;
+            if (typeof c === "string") return { src: c, caption: "" };
+            if (typeof c === "object" && typeof c.src === "string" && c.src) {
+              return {
+                src: c.src,
+                caption: typeof c.caption === "string" ? c.caption : "",
+              };
+            }
+            return null;
+          }
           let rs;
           if (Array.isArray(rows) && rows.length > 0) {
             rs = rows.map((r) => {
               const out = [null, null, null];
               if (Array.isArray(r)) {
-                out[0] = typeof r[0] === "string" ? r[0] : null;
-                out[1] = typeof r[1] === "string" ? r[1] : null;
-                out[2] = typeof r[2] === "string" ? r[2] : null;
+                out[0] = coerceCell(r[0]);
+                out[1] = coerceCell(r[1]);
+                out[2] = coerceCell(r[2]);
               }
               return out;
             });
@@ -2599,14 +2659,29 @@
             } else if (b.type === "photoarray") {
               if (!Array.isArray(b.rows)) b.rows = [];
               b.rows = b.rows.map((r) => {
-                // Pull populated entries (in their original slot order), then pad
-                // with nulls. Result: left-compacted [a, b, null] / [a, null, null]
-                // / [a, b, c] / [null, null, null]. The display layer relies on
-                // this invariant to determine how many cells to render.
+                // Pull populated entries (in their original slot order), normalize
+                // each to the {src, caption} object form, then pad with nulls.
+                // Result: left-compacted [a, b, null] / [a, null, null] / [a, b, c]
+                // / [null, null, null]. The display layer relies on this invariant
+                // to determine how many cells to render.
                 const populated = [];
                 if (Array.isArray(r)) {
                   for (let i = 0; i < Math.min(r.length, 3); i++) {
-                    if (typeof r[i] === "string" && r[i]) populated.push(r[i]);
+                    const c = r[i];
+                    if (typeof c === "string" && c) {
+                      // Legacy: bare data URL
+                      populated.push({ src: c, caption: "" });
+                    } else if (
+                      c &&
+                      typeof c === "object" &&
+                      typeof c.src === "string" &&
+                      c.src
+                    ) {
+                      populated.push({
+                        src: c.src,
+                        caption: typeof c.caption === "string" ? c.caption : "",
+                      });
+                    }
                   }
                 }
                 while (populated.length < 3) populated.push(null);
@@ -2662,6 +2737,14 @@
                     return false;
                   });
                 });
+                const hasLegacyStringPhoto = parsed.blocks.some((b) => {
+                  if (!b || b.type !== "photoarray" || !Array.isArray(b.rows))
+                    return false;
+                  return b.rows.some(
+                    (r) =>
+                      Array.isArray(r) && r.some((c) => typeof c === "string"),
+                  );
+                });
                 const needsRewrite =
                   !parsed.metaFields ||
                   typeof parsed.formType !== "string" ||
@@ -2669,7 +2752,8 @@
                   "operation" in parsed ||
                   "rev" in parsed ||
                   "date" in parsed ||
-                  hasNonCompactPhotoarray;
+                  hasNonCompactPhotoarray ||
+                  hasLegacyStringPhoto;
                 state = normalizeState(parsed);
                 if (needsRewrite) saveState();
                 return true;
@@ -3728,10 +3812,19 @@
 
         // ---------- Photo array element ----------
         // Keep a photo array row's data left-compacted: populated cells first,
-        // padded with nulls. Display relies on this invariant.
+        // padded with nulls. Display relies on this invariant. A "populated" cell
+        // is an object with a non-empty src (caption is allowed to be empty).
         function compactPhotoArrayRow(row) {
           if (!Array.isArray(row)) return [null, null, null];
-          const out = row.filter((c) => typeof c === "string" && c).slice(0, 3);
+          const out = row
+            .filter(
+              (c) =>
+                c &&
+                typeof c === "object" &&
+                typeof c.src === "string" &&
+                c.src,
+            )
+            .slice(0, 3);
           while (out.length < 3) out.push(null);
           return out;
         }
@@ -3748,8 +3841,9 @@
             rowWrap.className = "photoarray-row-wrapper";
 
             // Count populated cells. Data is normalized to be left-compact, so the
-            // count is just the leading non-null run.
-            const populatedCount = row.filter((c) => !!c).length;
+            // count is just the leading non-null run. A populated cell is an object
+            // with a non-empty src (the caption is allowed to be empty).
+            const populatedCount = row.filter((c) => c && c.src).length;
 
             // Empty row: show three placeholders so the user can pick where to
             // start. Otherwise, render only the populated cells; the count drives
@@ -3830,18 +3924,30 @@
           return el;
         }
 
-        function buildPhotoArrayCell(blockId, rowIdx, colIdx, imgDataUrl) {
+        function buildPhotoArrayCell(blockId, rowIdx, colIdx, entry) {
+          // entry is either null (placeholder cell) or { src, caption }.
+          const imgDataUrl = entry && entry.src ? entry.src : null;
+          const captionText =
+            entry && typeof entry.caption === "string" ? entry.caption : "";
+
           const cell = document.createElement("div");
           cell.className = "photoarray-cell" + (imgDataUrl ? " has-image" : "");
-          cell.title = "Click or drop an image";
+          cell.title = imgDataUrl
+            ? "Click to replace this image"
+            : "Click or drop an image";
           cell.tabIndex = 0; // make focusable so render() can focus it after insert
 
           cell.addEventListener("click", (e) => {
+            // Clicks on the clear button or the caption input shouldn't trigger
+            // the upload picker - let those handlers run on their own.
             if (e.target.closest(".clear-btn")) return;
+            if (e.target.closest(".photoarray-caption")) return;
             handlePhotoArrayUpload(blockId, rowIdx, colIdx);
           });
           // Keyboard activation: Enter or Space opens the upload picker
           cell.addEventListener("keydown", (e) => {
+            // Caption input handles its own keys; don't hijack them
+            if (e.target.closest(".photoarray-caption")) return;
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               handlePhotoArrayUpload(blockId, rowIdx, colIdx);
@@ -3852,7 +3958,15 @@
               const dataUrl = await loadStepImageFile(file);
               const b = findBlockById(blockId);
               if (b && b.type === "photoarray" && b.rows[rowIdx]) {
-                b.rows[rowIdx][colIdx] = dataUrl;
+                // Preserve any caption already on this cell when replacing the image.
+                const existing = b.rows[rowIdx][colIdx];
+                const keepCaption =
+                  existing &&
+                  typeof existing === "object" &&
+                  typeof existing.caption === "string"
+                    ? existing.caption
+                    : "";
+                b.rows[rowIdx][colIdx] = { src: dataUrl, caption: keepCaption };
                 b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
                 saveState();
                 render();
@@ -3863,15 +3977,21 @@
           });
 
           if (imgDataUrl) {
+            // Image area takes the upper portion of the cell.
+            const imgArea = document.createElement("div");
+            imgArea.className = "photoarray-cell-image";
+
             const img = document.createElement("img");
             img.src = imgDataUrl;
             img.alt = "Photo";
-            cell.appendChild(img);
-            cell.appendChild(
+            imgArea.appendChild(img);
+            imgArea.appendChild(
               buildClearButton("Remove image", (e) => {
                 e.stopPropagation();
                 const b = findBlockById(blockId);
                 if (b && b.type === "photoarray" && b.rows[rowIdx]) {
+                  // Removing the image discards the caption too - they belong to the
+                  // same cell. If you want to keep the caption, edit the image instead.
                   b.rows[rowIdx][colIdx] = null;
                   b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
                   saveState();
@@ -3879,6 +3999,32 @@
                 }
               }),
             );
+            cell.appendChild(imgArea);
+
+            // Caption input below the image. Single-line text only.
+            const cap = document.createElement("input");
+            cap.type = "text";
+            cap.className = "photoarray-caption";
+            cap.placeholder = "Caption";
+            cap.value = captionText;
+            cap.maxLength = 200;
+            cap.addEventListener("mousedown", (e) => e.stopPropagation());
+            cap.addEventListener("click", (e) => e.stopPropagation());
+            cap.addEventListener("input", () => {
+              const b = findBlockById(blockId);
+              if (
+                b &&
+                b.type === "photoarray" &&
+                b.rows[rowIdx] &&
+                b.rows[rowIdx][colIdx]
+              ) {
+                b.rows[rowIdx][colIdx].caption = cap.value;
+                saveState();
+                // No render() here - the caption text is already in the input;
+                // re-rendering would steal focus and lose the cursor position.
+              }
+            });
+            cell.appendChild(cap);
           } else {
             const ph = document.createElement("div");
             ph.className = "placeholder";
@@ -3896,7 +4042,15 @@
             const dataUrl = await loadStepImageFile(file);
             const b = findBlockById(blockId);
             if (b && b.type === "photoarray" && b.rows[rowIdx]) {
-              b.rows[rowIdx][colIdx] = dataUrl;
+              // Preserve any caption already on this cell when replacing the image.
+              const existing = b.rows[rowIdx][colIdx];
+              const keepCaption =
+                existing &&
+                typeof existing === "object" &&
+                typeof existing.caption === "string"
+                  ? existing.caption
+                  : "";
+              b.rows[rowIdx][colIdx] = { src: dataUrl, caption: keepCaption };
               // Re-compact in case caller pointed at a slot past the populated run
               // (e.g. the "+" button passes populatedCount as the index).
               b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
