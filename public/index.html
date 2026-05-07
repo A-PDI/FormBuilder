@@ -1802,16 +1802,6 @@
         .page {
           box-shadow: none;
           margin: 0 !important;
-          /* Print: content-driven height. Fixed 11in works on desktop where
-           the browser respects @page margin: 0, but mobile Safari/Chrome
-           reserve ~1in for their own print headers/footers regardless of
-           CSS. With height: 11in the bottom of the .page (including our
-           footer) overflows to a phantom physical page 2. Letting the
-           .page take only the height it actually needs avoids the
-           overflow entirely - empty pages are ~1.3in tall (header +
-           footer), full pages stop just below the last row. */
-          height: auto !important;
-          min-height: 0 !important;
           /* Defensive: undo any mobile transform/margin that might leak into
            print (Safari iOS especially) so the page renders at full 8.5x11
            and doesn't leave blank space below it. */
@@ -1822,6 +1812,19 @@
           /* Prefer to keep an entire .page on a single physical page. */
           break-inside: avoid-page;
           page-break-inside: avoid;
+        }
+        /* Empty pages only: collapse to content size. Fixed 11in works on
+         desktop where the browser respects @page margin: 0, but mobile
+         Safari/Chrome reserve ~1in for their own print headers/footers
+         regardless of CSS, so an 11in EMPTY page would overflow into a
+         phantom physical page 2. Pages with content keep the fixed 11in
+         height so their footer stays pinned to the bottom of the page on
+         every device. (On mobile, very-content-heavy pages can still
+         overflow if the user has browser print headers/footers enabled;
+         that's a browser-level setting, not something CSS can override.) */
+        .page.is-empty {
+          height: auto !important;
+          min-height: 0 !important;
         }
         .page:last-child {
           page-break-after: auto;
@@ -3106,6 +3109,14 @@
         function buildPageElement(rows, pageIdx, totalPages) {
           const pageEl = document.createElement("div");
           pageEl.className = "page";
+          // Tag pages with no content rows. Print CSS uses this to collapse the
+          // page to its content size (header + footer only), avoiding a phantom
+          // blank physical page on mobile - while leaving full-height behaviour in
+          // place for pages that DO have content, so their footer stays pinned to
+          // the bottom of the printed page.
+          if (rows.length === 0) {
+            pageEl.classList.add("is-empty");
+          }
 
           pageEl.appendChild(buildHeader());
 
@@ -4745,6 +4756,21 @@
 
         document.addEventListener("DOMContentLoaded", () => {
           loadState();
+          // Mark the body when running on a touch-primary device. Used by the
+          // print stylesheet to size pages differently: desktop keeps a fixed
+          // 11in page (footer at the bottom of the sheet), mobile uses
+          // content-driven height so iOS Safari's print headers don't push the
+          // footer onto a phantom second page.
+          try {
+            if (
+              window.matchMedia &&
+              window.matchMedia("(pointer: coarse)").matches
+            ) {
+              document.body.classList.add("is-touch");
+            }
+          } catch (e) {
+            /* matchMedia missing on very old browsers - ignore */
+          }
           render();
           setupFocusTracking();
           setupBlockToolbar();
