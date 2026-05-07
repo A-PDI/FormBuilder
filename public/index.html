@@ -1184,6 +1184,11 @@
         text-overflow: clip;
         min-width: 0;
         line-height: 1.2;
+        /* Small left buffer so the first character isn't clipped by the
+         overflow:hidden box. Mobile WebKit/Blink can add a small pre-glyph
+         offset when letter-spacing + uppercase combine, and without a
+         buffer the first letter renders just past the box's left edge. */
+        padding-left: 4px;
       }
       .section-header-text:focus {
         background: var(--frost);
@@ -1757,6 +1762,16 @@
         .page {
           box-shadow: none;
           margin: 0 !important;
+          /* Print: content-driven height. Fixed 11in works on desktop where
+           the browser respects @page margin: 0, but mobile Safari/Chrome
+           reserve ~1in for their own print headers/footers regardless of
+           CSS. With height: 11in the bottom of the .page (including our
+           footer) overflows to a phantom physical page 2. Letting the
+           .page take only the height it actually needs avoids the
+           overflow entirely - empty pages are ~1.3in tall (header +
+           footer), full pages stop just below the last row. */
+          height: auto !important;
+          min-height: 0 !important;
           /* Defensive: undo any mobile transform/margin that might leak into
            print (Safari iOS especially) so the page renders at full 8.5x11
            and doesn't leave blank space below it. */
@@ -1764,6 +1779,9 @@
           margin-bottom: 0 !important;
           page-break-after: always;
           break-after: page;
+          /* Prefer to keep an entire .page on a single physical page. */
+          break-inside: avoid-page;
+          page-break-inside: avoid;
         }
         .page:last-child {
           page-break-after: auto;
