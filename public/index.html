@@ -567,6 +567,112 @@
         border-color: var(--navy);
       }
 
+      /* ---------- Floating format toolbar ---------- */
+      /* Appears when any rich-text editor has focus. Buttons share their
+       handler wiring with the sidebar version - same data-cmd attributes,
+       same applyFormat() entry point. */
+      .floating-fmt-toolbar {
+        position: fixed;
+        top: calc(48px + env(safe-area-inset-top, 0px) + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border: 1px solid var(--steel);
+        border-radius: 6px;
+        padding: 5px 8px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        z-index: 250;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        flex-wrap: wrap;
+        max-width: calc(100vw - 24px);
+      }
+      .floating-fmt-toolbar[hidden] {
+        display: none;
+      }
+      .floating-fmt-toolbar button {
+        border: 1px solid var(--steel);
+        background: white;
+        color: var(--charcoal);
+        cursor: pointer;
+        border-radius: 3px;
+        font-family: inherit;
+        font-size: 12px;
+        padding: 4px 7px;
+        min-width: 26px;
+        min-height: 26px;
+        line-height: 1;
+      }
+      .floating-fmt-toolbar button:hover {
+        border-color: var(--navy);
+      }
+      .floating-fmt-toolbar button:active {
+        background: var(--frost);
+      }
+      .floating-fmt-toolbar .fmt-bold {
+        font-weight: 700;
+        font-family: Georgia, "Times New Roman", serif;
+      }
+      .floating-fmt-toolbar .size-btn {
+        padding: 4px 6px;
+      }
+      .floating-fmt-toolbar .size-btn[data-arg="2"] {
+        font-size: 10px;
+      }
+      .floating-fmt-toolbar .size-btn[data-arg="3"] {
+        font-size: 12px;
+      }
+      .floating-fmt-toolbar .size-btn[data-arg="4"] {
+        font-size: 14px;
+      }
+      .floating-fmt-toolbar .size-btn[data-arg="5"] {
+        font-size: 16px;
+      }
+      .floating-fmt-toolbar .color-swatch {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        padding: 0;
+        border: 1px solid #999;
+        border-radius: 3px;
+        outline: 2px solid transparent;
+        outline-offset: 0;
+      }
+      .floating-fmt-toolbar .color-swatch:hover {
+        outline-color: var(--navy);
+      }
+      .floating-fmt-toolbar .floating-fmt-sep {
+        width: 1px;
+        align-self: stretch;
+        background: var(--frost);
+        margin: 2px 4px;
+      }
+      .floating-fmt-toolbar .floating-fmt-label {
+        font-size: 11px;
+        color: var(--charcoal);
+        font-weight: 600;
+        margin-right: 2px;
+      }
+      .floating-fmt-toolbar .floating-fmt-clear {
+        font-size: 14px;
+        padding: 4px 8px;
+      }
+      /* Compact variant for mobile - smaller buttons, drop labels via media. */
+      @media (max-width: 600px) {
+        .floating-fmt-toolbar {
+          padding: 4px 6px;
+          gap: 3px;
+        }
+        .floating-fmt-toolbar .floating-fmt-label {
+          display: none;
+        }
+        .floating-fmt-toolbar button {
+          min-width: 30px;
+          min-height: 30px;
+        }
+      }
+
       /* ---------- Pages ---------- */
       .pages-container {
         padding: 22px 14px 40px;
@@ -2235,6 +2341,113 @@
     </aside>
 
     <div class="sidebar-backdrop no-print" id="sidebarBackdrop"></div>
+
+    <!--
+  Floating format toolbar. Appears when any rich-text editor has focus and
+  hides when focus moves elsewhere. Lives outside the sidebar so the user
+  doesn't have to open the hamburger menu just to bold a word.
+  Buttons share data-cmd / data-icon attributes with the sidebar version,
+  so setupFormatToolbar() picks them up automatically.
+-->
+    <div
+      class="floating-fmt-toolbar no-print"
+      id="floatingFormatToolbar"
+      hidden
+    >
+      <button
+        class="fmt-bold"
+        data-cmd="bold"
+        type="button"
+        title="Bold (toggle)"
+      >
+        B
+      </button>
+      <span class="floating-fmt-sep"></span>
+      <span class="floating-fmt-label">Size</span>
+      <button
+        class="size-btn"
+        data-cmd="fontSize"
+        data-arg="2"
+        type="button"
+        title="Small"
+      >
+        S
+      </button>
+      <button
+        class="size-btn"
+        data-cmd="fontSize"
+        data-arg="3"
+        type="button"
+        title="Normal"
+      >
+        N
+      </button>
+      <button
+        class="size-btn"
+        data-cmd="fontSize"
+        data-arg="4"
+        type="button"
+        title="Medium"
+      >
+        M
+      </button>
+      <button
+        class="size-btn"
+        data-cmd="fontSize"
+        data-arg="5"
+        type="button"
+        title="Large"
+      >
+        L
+      </button>
+      <span class="floating-fmt-sep"></span>
+      <span class="floating-fmt-label">Color</span>
+      <button
+        class="color-swatch"
+        data-cmd="foreColor"
+        data-arg="#595959"
+        style="background: #595959"
+        type="button"
+        title="Charcoal"
+        aria-label="Charcoal"
+      ></button>
+      <button
+        class="color-swatch"
+        data-cmd="foreColor"
+        data-arg="#b3261e"
+        style="background: #b3261e"
+        type="button"
+        title="Red"
+        aria-label="Red"
+      ></button>
+      <button
+        class="color-swatch"
+        data-cmd="foreColor"
+        data-arg="#1565c0"
+        style="background: #1565c0"
+        type="button"
+        title="Blue"
+        aria-label="Blue"
+      ></button>
+      <button
+        class="color-swatch"
+        data-cmd="foreColor"
+        data-arg="#2e7d32"
+        style="background: #2e7d32"
+        type="button"
+        title="Green"
+        aria-label="Green"
+      ></button>
+      <span class="floating-fmt-sep"></span>
+      <button
+        class="floating-fmt-clear"
+        data-cmd="removeFormat"
+        type="button"
+        title="Clear formatting from selection"
+      >
+        &#x232B;
+      </button>
+    </div>
 
     <div id="pagesContainer" class="pages-container"></div>
     <div id="toast" class="toast no-print"></div>
@@ -4734,7 +4947,11 @@
         }
 
         function addStep() {
-          insertBlockAfter(lastFocusedBlockId, createStepBlock());
+          // null reference -> insertBlockAfter pushes to the end of state.blocks.
+          // Behaviour the user expects: every new block lands at the bottom of
+          // the document, never spliced into the middle just because a different
+          // block had focus earlier.
+          insertBlockAfter(null, createStepBlock());
         }
 
         function addCallout(kind) {
@@ -4742,23 +4959,23 @@
             console.warn("Unknown callout kind:", kind);
             return;
           }
-          insertBlockAfter(lastFocusedBlockId, createCalloutBlock(kind));
+          insertBlockAfter(null, createCalloutBlock(kind));
         }
 
         function addSection() {
-          insertBlockAfter(lastFocusedBlockId, createSectionBlock());
+          insertBlockAfter(null, createSectionBlock());
         }
 
         function addParts() {
-          insertBlockAfter(lastFocusedBlockId, createPartsBlock());
+          insertBlockAfter(null, createPartsBlock());
         }
 
         function addPhotoArray() {
-          insertBlockAfter(lastFocusedBlockId, createPhotoArrayBlock());
+          insertBlockAfter(null, createPhotoArrayBlock());
         }
 
         function addTextBox() {
-          insertBlockAfter(lastFocusedBlockId, createTextBoxBlock());
+          insertBlockAfter(null, createTextBoxBlock());
         }
 
         // ---------- Document-level operations ----------
@@ -4875,22 +5092,79 @@
 
         function setupFormatToolbar() {
           // Prevent the format buttons from stealing focus from the editor.
-          // Scope: only the format-related controls in the sidebar (not the block insert buttons).
-          const fmtSelectors = ".sidebar [data-cmd], .sidebar [data-icon]";
+          // Scope: format-related controls in either the sidebar or the floating
+          // popup toolbar (both carry data-cmd / data-icon attributes).
+          const fmtSelectors =
+            ".sidebar [data-cmd], .sidebar [data-icon]," +
+            " .floating-fmt-toolbar [data-cmd], .floating-fmt-toolbar [data-icon]";
           document.querySelectorAll(fmtSelectors).forEach((btn) => {
             btn.addEventListener("mousedown", (e) => e.preventDefault());
           });
 
-          document.querySelectorAll(".sidebar [data-cmd]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              applyFormat(btn.dataset.cmd, btn.dataset.arg || null);
+          document
+            .querySelectorAll(
+              ".sidebar [data-cmd], .floating-fmt-toolbar [data-cmd]",
+            )
+            .forEach((btn) => {
+              btn.addEventListener("click", () => {
+                applyFormat(btn.dataset.cmd, btn.dataset.arg || null);
+              });
             });
+
+          document
+            .querySelectorAll(
+              ".sidebar [data-icon], .floating-fmt-toolbar [data-icon]",
+            )
+            .forEach((btn) => {
+              btn.addEventListener("click", () => {
+                insertIcon(btn.dataset.icon);
+              });
+            });
+        }
+
+        // Show the floating format toolbar whenever a rich-text editor has focus,
+        // hide it when focus moves outside both the toolbar and any editor. This
+        // avoids the user having to open the hamburger menu to apply formatting.
+        function setupFloatingFormatToolbar() {
+          const toolbar = document.getElementById("floatingFormatToolbar");
+          if (!toolbar) return;
+
+          const isEditable = (el) =>
+            el && el.classList && el.classList.contains("rich-text-editor");
+
+          const showToolbar = () => {
+            toolbar.hidden = false;
+          };
+          const hideToolbar = () => {
+            toolbar.hidden = true;
+          };
+
+          document.addEventListener("focusin", (e) => {
+            if (isEditable(e.target)) showToolbar();
           });
 
-          document.querySelectorAll(".sidebar [data-icon]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              insertIcon(btn.dataset.icon);
-            });
+          // focusout fires before the next focusin. Defer the active-element check
+          // so we see where focus landed - if it's another editable or inside the
+          // toolbar itself, keep the toolbar visible.
+          document.addEventListener("focusout", () => {
+            setTimeout(() => {
+              const a = document.activeElement;
+              if (isEditable(a)) return;
+              if (a && toolbar.contains(a)) return;
+              hideToolbar();
+            }, 0);
+          });
+
+          // Click anywhere outside the toolbar AND outside any editor closes it.
+          // Covers the case where the user taps a non-focusable region (like a
+          // page background) where focusout might not fire reliably on all
+          // browsers.
+          document.addEventListener("mousedown", (e) => {
+            if (toolbar.hidden) return;
+            const t = e.target;
+            if (toolbar.contains(t)) return;
+            if (t && t.closest && t.closest(".rich-text-editor")) return;
+            hideToolbar();
           });
         }
 
@@ -5083,6 +5357,7 @@
           setupFocusTracking();
           setupBlockToolbar();
           setupFormatToolbar();
+          setupFloatingFormatToolbar();
           setupSidebarToggle();
           updatePageScale();
         });
