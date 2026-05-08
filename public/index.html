@@ -586,7 +586,10 @@
         display: flex;
         flex-direction: column;
         position: relative;
-        overflow: hidden;
+        /* No overflow:hidden here. The print media block clips to page bounds
+         for clean printed output, but on screen we want no-print affordances
+         like the photo-array action strip ("+ Add Photo" / "Delete Row") to
+         remain visible when the row ending sits at the bottom of the page. */
       }
 
       /* ---------- Header ---------- */
@@ -1802,6 +1805,10 @@
         .page {
           box-shadow: none;
           margin: 0 !important;
+          /* In print we DO want to clip to page bounds so no-print stragglers
+           and any overflow stays out of the printed sheet. (Base CSS keeps
+           overflow visible on screen so action strips remain accessible.) */
+          overflow: hidden;
           /* Defensive: undo any mobile transform/margin that might leak into
            print (Safari iOS especially) so the page renders at full 8.5x11
            and doesn't leave blank space below it. */
@@ -2890,6 +2897,11 @@
           // Each block now occupies its own full-width row. Steps, callouts, and
           // section headers are structurally identical from a pagination standpoint;
           // only their height differs (handled in paginate()).
+          //
+          // Photo arrays are special: each interior row is independently
+          // paginatable so a multi-row block can split across pages instead of
+          // forcing the whole block to bump to a new page (which would leave the
+          // previous page mostly empty).
           const rows = [];
           for (const block of blocks) {
             if (block.type === "callout") {
@@ -2901,7 +2913,19 @@
             } else if (block.type === "parts") {
               rows.push({ type: "parts", block });
             } else if (block.type === "photoarray") {
-              rows.push({ type: "photoarray", block });
+              const numRows =
+                Array.isArray(block.rows) && block.rows.length > 0
+                  ? block.rows.length
+                  : 1;
+              for (let i = 0; i < numRows; i++) {
+                rows.push({
+                  type: "photoarrayrow",
+                  block,
+                  rowIdx: i,
+                  isFirstInBlock: i === 0,
+                  isLastInBlock: i === numRows - 1,
+                });
+              }
             } else if (block.type === "textbox") {
               rows.push({ type: "textbox", block });
             }
@@ -3016,8 +3040,11 @@
               rh = SECTION_ROW_HEIGHT;
             } else if (row.type === "parts") {
               rh = estimatePartsHeight(row.block);
-            } else if (row.type === "photoarray") {
-              rh = estimatePhotoArrayHeight(row.block);
+            } else if (row.type === "photoarrayrow") {
+              // Single photo-array row. ROW_GAP added by paginate covers the
+              // 0.10in gap between consecutive rows of the same block (matching
+              // the original full-block estimate of N*2.50 + (N-1)*0.10).
+              rh = 2.5;
             } else if (row.type === "textbox") {
               rh = estimateTextBoxHeight(row.block);
             } else {
@@ -3137,7 +3164,45 @@
               '<div class="empty-state-body">Use the <strong>Insert Block</strong> menu in the sidebar to add steps and callouts.</div>';
             content.appendChild(empty);
           } else {
-            rows.forEach((row) => content.appendChild(buildRowElement(row)));
+            // Coalesce consecutive photoarrayrow entries from the same block into a
+            // single chunk. A photo array can split across pages but each page's
+            // chunk is rendered as a single block element (so the user sees one
+            // tidy block, not a separate sub-block per row).
+            const coalesced = [];
+            let i = 0;
+            while (i < rows.length) {
+              const row = rows[i];
+              if (row.type === "photoarrayrow") {
+                const block = row.block;
+                const rowIndices = [row.rowIdx];
+                let j = i + 1;
+                while (
+                  j < rows.length &&
+                  rows[j].type === "photoarrayrow" &&
+                  rows[j].block === block
+                ) {
+                  rowIndices.push(rows[j].rowIdx);
+                  j++;
+                }
+                coalesced.push({
+                  type: "photoarraychunk",
+                  block,
+                  rowIndices,
+                  // Block controls (move/delete) appear on the first chunk of the
+                  // block; the "+ Row" affordance appears on the last chunk.
+                  isFirstChunk: rowIndices[0] === 0,
+                  isLastChunk:
+                    rowIndices[rowIndices.length - 1] === block.rows.length - 1,
+                });
+                i = j;
+              } else {
+                coalesced.push(row);
+                i++;
+              }
+            }
+            coalesced.forEach((row) =>
+              content.appendChild(buildRowElement(row)),
+            );
           }
           pageEl.appendChild(content);
 
@@ -3360,7 +3425,21 @@
             el.appendChild(buildPartsElement(row.block));
             return el;
           }
+          if (row.type === "photoarraychunk") {
+            const el = document.createElement("div");
+            el.className = "row row-photoarray";
+            el.appendChild(
+              buildPhotoArrayElement(row.block, {
+                rowIndices: row.rowIndices,
+                isFirstChunk: row.isFirstChunk,
+                isLastChunk: row.isLastChunk,
+              }),
+            );
+            return el;
+          }
           if (row.type === "photoarray") {
+            // Legacy path - building the full block (no split). Used by tests and
+            // any caller that bypassed blocksToRows expansion.
             const el = document.createElement("div");
             el.className = "row row-photoarray";
             el.appendChild(buildPhotoArrayElement(row.block));
@@ -3853,14 +3932,32 @@
           return out;
         }
 
-        function buildPhotoArrayElement(block) {
+        function buildPhotoArrayElement(block, chunkOpts) {
+          // chunkOpts is optional. When omitted, the entire block renders (legacy
+          // behavior). When supplied:
+          //   - rowIndices: which row indices of block.rows to render (in order)
+          //   - isFirstChunk: true if this chunk contains row 0 of the block
+          //   - isLastChunk:  true if this chunk contains the last row of the block
+          // Block-level controls (move/delete) appear on the first chunk only;
+          // the "+ Row" affordance appears on the last chunk only. Per-row
+          // controls (Delete Row / + Add Photo) live on each row regardless.
+          const rowIndices =
+            chunkOpts && Array.isArray(chunkOpts.rowIndices)
+              ? chunkOpts.rowIndices
+              : block.rows.map((_, i) => i);
+          const isFirstChunk = chunkOpts ? !!chunkOpts.isFirstChunk : true;
+          const isLastChunk = chunkOpts ? !!chunkOpts.isLastChunk : true;
+
           const el = document.createElement("div");
           el.className = "photoarray-block";
           el.dataset.blockId = block.id;
+          if (!isFirstChunk) el.classList.add("photoarray-block-continuation");
 
-          el.appendChild(buildBlockControls(block));
+          if (isFirstChunk) el.appendChild(buildBlockControls(block));
 
-          block.rows.forEach((row, rowIdx) => {
+          rowIndices.forEach((rowIdx) => {
+            const row = block.rows[rowIdx];
+            if (!row) return; // safety: skip out-of-range indices
             const rowWrap = document.createElement("div");
             rowWrap.className = "photoarray-row-wrapper";
 
@@ -3933,11 +4030,6 @@
                 addBtn.addEventListener("mousedown", (e) => e.preventDefault());
                 addBtn.addEventListener("click", (e) => {
                   e.stopPropagation();
-                  // Show a placeholder cell for the next slot. Click on the
-                  // placeholder triggers the file picker; drag-drop populates it
-                  // directly. This matches the empty-row UX and avoids the
-                  // previous behaviour where + Add Photo opened the file picker
-                  // immediately, denying drag-and-drop as an option.
                   const cur = pendingPhotoSlot.get(pendingKey) || 0;
                   if (populatedCount + cur < 3) {
                     pendingPhotoSlot.set(pendingKey, cur + 1);
@@ -3967,15 +4059,21 @@
             el.appendChild(rowWrap);
           });
 
-          // Add-row button (no-print)
-          const addBtn = document.createElement("button");
-          addBtn.type = "button";
-          addBtn.className = "photoarray-add-row no-print";
-          addBtn.textContent = "+ Row";
-          addBtn.title = "Add a new row of photos";
-          addBtn.addEventListener("mousedown", (e) => e.preventDefault());
-          addBtn.addEventListener("click", () => addPhotoArrayRow(block.id));
-          el.appendChild(addBtn);
+          // "+ Row" lives at the bottom of the BLOCK. When the block is split
+          // across pages we only render it on the last chunk so it doesn't appear
+          // mid-block.
+          if (isLastChunk) {
+            const addRowBtn = document.createElement("button");
+            addRowBtn.type = "button";
+            addRowBtn.className = "photoarray-add-row no-print";
+            addRowBtn.textContent = "+ Row";
+            addRowBtn.title = "Add a new row of photos";
+            addRowBtn.addEventListener("mousedown", (e) => e.preventDefault());
+            addRowBtn.addEventListener("click", () =>
+              addPhotoArrayRow(block.id),
+            );
+            el.appendChild(addRowBtn);
+          }
 
           return el;
         }
