@@ -2346,6 +2346,12 @@
         let lastFocusedEditable = null;
         let lastFocusedBlockId = null;
         let focusBlockIdAfterRender = null;
+        // Transient UI state: which photo array rows are currently showing an
+        // "extra" placeholder cell that the user requested via "+ Add Photo".
+        // Key: blockId + '__' + rowIdx, value: number of pending placeholders.
+        // Never persisted - only valid for this in-memory session, and reset on
+        // the user uploading to the placeholder, deleting the row, or refreshing.
+        const pendingPhotoSlot = new Map();
 
         function genId() {
           _idCounter += 1;
@@ -3863,19 +3869,39 @@
             // with a non-empty src (the caption is allowed to be empty).
             const populatedCount = row.filter((c) => c && c.src).length;
 
+            // Pending placeholder cells = how many empty placeholder cells to
+            // render past the populated ones. The user adds these by clicking
+            // "+ Add Photo"; they let the user click-to-pick OR drag-and-drop a
+            // file into a clearly visible empty box, matching the look of an
+            // initially-empty row.
+            const pendingKey = block.id + "__" + rowIdx;
+            // Drop stale entries: pending only makes sense between 1 and 2
+            // populated cells. Outside that range it's never rendered.
+            if (populatedCount === 0 || populatedCount >= 3) {
+              pendingPhotoSlot.delete(pendingKey);
+            }
+            const pending = pendingPhotoSlot.get(pendingKey) || 0;
+
             // Empty row: show three placeholders so the user can pick where to
-            // start. Otherwise, render only the populated cells; the count drives
-            // the grid-template-columns via the count-N modifier class.
-            const cellsToRender = populatedCount === 0 ? 3 : populatedCount;
+            // start. Otherwise, render the populated cells plus any requested
+            // pending placeholders; the count drives grid-template-columns via
+            // the count-N modifier class. Capped at 3 cells per row.
+            let cellsToRender;
+            if (populatedCount === 0) {
+              cellsToRender = 3;
+            } else {
+              cellsToRender = Math.min(3, populatedCount + pending);
+            }
             const layoutClass = "count-" + cellsToRender;
 
             const grid = document.createElement("div");
             grid.className = "photoarray-row " + layoutClass;
 
             for (let i = 0; i < cellsToRender; i++) {
-              // For empty rows, render placeholder cells at slots 0..2.
-              // For populated rows, render the populated entries at their data slot
-              // (which equals i since data is left-compacted).
+              // Slot i < populatedCount renders the populated entry at that slot.
+              // Slot i >= populatedCount renders a placeholder cell (entry = null).
+              // The placeholder uses colIdx = i so the upload/drop handler writes
+              // into the right slot.
               grid.appendChild(
                 buildPhotoArrayCell(block.id, rowIdx, i, row[i] || null),
               );
@@ -3887,7 +3913,10 @@
             // buttons. Built inline so they're always visible (the previous
             // floating-circle design lived in the page gutter and was easy to
             // miss). Strip is rendered only when at least one action exists.
-            const showAddBtn = populatedCount > 0 && populatedCount < 3;
+            // Hide "+ Add Photo" once every visible cell is either populated or
+            // pending - there's no room for another.
+            const showAddBtn =
+              populatedCount > 0 && populatedCount + pending < 3;
             const showDelBtn = block.rows.length > 1;
 
             if (showAddBtn || showDelBtn) {
@@ -3898,13 +3927,22 @@
                 const addBtn = document.createElement("button");
                 addBtn.type = "button";
                 addBtn.className = "photoarray-add-image";
-                addBtn.title = "Add another image to this row";
+                addBtn.title =
+                  "Show an empty cell to drop or click an image into";
                 addBtn.textContent = "+ Add Photo";
                 addBtn.addEventListener("mousedown", (e) => e.preventDefault());
                 addBtn.addEventListener("click", (e) => {
                   e.stopPropagation();
-                  // Append to the next null slot (which is `populatedCount`).
-                  handlePhotoArrayUpload(block.id, rowIdx, populatedCount);
+                  // Show a placeholder cell for the next slot. Click on the
+                  // placeholder triggers the file picker; drag-drop populates it
+                  // directly. This matches the empty-row UX and avoids the
+                  // previous behaviour where + Add Photo opened the file picker
+                  // immediately, denying drag-and-drop as an option.
+                  const cur = pendingPhotoSlot.get(pendingKey) || 0;
+                  if (populatedCount + cur < 3) {
+                    pendingPhotoSlot.set(pendingKey, cur + 1);
+                    render();
+                  }
                 });
                 actions.appendChild(addBtn);
               }
@@ -3971,26 +4009,55 @@
               handlePhotoArrayUpload(blockId, rowIdx, colIdx);
             }
           });
-          attachDropTarget(cell, async (file) => {
-            try {
-              const dataUrl = await loadStepImageFile(file);
-              const b = findBlockById(blockId);
-              if (b && b.type === "photoarray" && b.rows[rowIdx]) {
-                // Preserve any caption already on this cell when replacing the image.
-                const existing = b.rows[rowIdx][colIdx];
+          attachDropTarget(cell, async (firstFile, allFiles) => {
+            // Multi-file support: dropping N files starting at colIdx K fills slots
+            // K, K+1, K+2 (capped at the row's 3-cell capacity). Files past the
+            // capacity are ignored. Existing captions are preserved when a slot
+            // already has one.
+            const files = allFiles && allFiles.length ? allFiles : [firstFile];
+            const b = findBlockById(blockId);
+            if (!b || b.type !== "photoarray" || !b.rows[rowIdx]) return;
+
+            let wrote = 0;
+            for (let fi = 0; fi < files.length; fi++) {
+              const targetSlot = colIdx + fi;
+              if (targetSlot >= 3) break; // row is at capacity
+              const f = files[fi];
+              if (!f || !f.type || !f.type.startsWith("image/")) continue;
+              try {
+                const dataUrl = await loadStepImageFile(f);
+                const existing = b.rows[rowIdx][targetSlot];
                 const keepCaption =
                   existing &&
                   typeof existing === "object" &&
                   typeof existing.caption === "string"
                     ? existing.caption
                     : "";
-                b.rows[rowIdx][colIdx] = { src: dataUrl, caption: keepCaption };
-                b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
-                saveState();
-                render();
+                b.rows[rowIdx][targetSlot] = {
+                  src: dataUrl,
+                  caption: keepCaption,
+                };
+                wrote++;
+              } catch (err) {
+                console.warn("Could not load image:", err && err.message);
               }
-            } catch (err) {
-              alert("Could not load image: " + err.message);
+            }
+
+            if (wrote > 0) {
+              b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
+              // Each file consumed one pending placeholder (if any were active).
+              const k = blockId + "__" + rowIdx;
+              const cur = pendingPhotoSlot.get(k) || 0;
+              const next = Math.max(0, cur - wrote);
+              if (next === 0) pendingPhotoSlot.delete(k);
+              else pendingPhotoSlot.set(k, next);
+              saveState();
+              render();
+            } else if (
+              files.length === 0 ||
+              !files.some((f) => f && f.type && f.type.startsWith("image/"))
+            ) {
+              alert("Please drop an image file.");
             }
           });
 
@@ -4070,8 +4137,17 @@
                   : "";
               b.rows[rowIdx][colIdx] = { src: dataUrl, caption: keepCaption };
               // Re-compact in case caller pointed at a slot past the populated run
-              // (e.g. the "+" button passes populatedCount as the index).
+              // (e.g. clicking the placeholder cell rendered for + Add Photo).
               b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
+              // A placeholder cell just became populated, so consume one pending
+              // slot for this row (if any).
+              const k = blockId + "__" + rowIdx;
+              const cur = pendingPhotoSlot.get(k) || 0;
+              if (cur > 0) {
+                const next = cur - 1;
+                if (next === 0) pendingPhotoSlot.delete(k);
+                else pendingPhotoSlot.set(k, next);
+              }
               saveState();
               render();
             }
@@ -4098,6 +4174,13 @@
           if (hasData && !confirm("Delete this row? Photos will be lost."))
             return;
           b.rows.splice(rowIdx, 1);
+          // Row indices for this block shift after deletion, which makes the
+          // pendingPhotoSlot keys (blockId + '__' + rowIdx) ambiguous. Cleanest
+          // fix: clear all pending entries for this block. The user can re-click
+          // + Add Photo on any other row to bring its placeholder back.
+          for (const k of Array.from(pendingPhotoSlot.keys())) {
+            if (k.startsWith(blockId + "__")) pendingPhotoSlot.delete(k);
+          }
           saveState();
           render();
         }
@@ -4312,14 +4395,20 @@
           el.addEventListener("drop", (e) => {
             e.preventDefault();
             el.classList.remove("dragover");
-            const file =
-              e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-            if (!file) return;
-            if (!file.type.startsWith("image/")) {
+            const filesList = e.dataTransfer && e.dataTransfer.files;
+            if (!filesList || !filesList[0]) return;
+            const first = filesList[0];
+            if (!first.type.startsWith("image/")) {
               alert("Please drop an image file.");
               return;
             }
-            fileHandler(file);
+            // Pass the first file (back-compat for single-image callers like the
+            // logo and step image) plus the full list as a second argument for
+            // callers that handle multi-file drops (the photo array).
+            const allImages = Array.from(filesList).filter((f) =>
+              f.type.startsWith("image/"),
+            );
+            fileHandler(first, allImages);
           });
         }
 
