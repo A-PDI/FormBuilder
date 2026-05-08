@@ -2643,6 +2643,12 @@
           );
           s.blocks.forEach((b) => {
             if (!b.id) b.id = genId();
+            // forcePageBreakBefore: applies to all block types. When true, the
+            // block starts a new page (provided the current page already has at
+            // least one row - we don't create empty leading pages). Toggled by
+            // the down-arrow on the last block, cleared by the up-arrow.
+            if (typeof b.forcePageBreakBefore !== "boolean")
+              b.forcePageBreakBefore = false;
             if (b.type === "step") {
               if (typeof b.img === "undefined") b.img = null;
               if (typeof b.text !== "string") b.text = "";
@@ -2904,14 +2910,15 @@
           // previous page mostly empty).
           const rows = [];
           for (const block of blocks) {
+            const fpb = !!block.forcePageBreakBefore;
             if (block.type === "callout") {
-              rows.push({ type: "callout", block });
+              rows.push({ type: "callout", block, forcePageBreakBefore: fpb });
             } else if (block.type === "step") {
-              rows.push({ type: "step", block });
+              rows.push({ type: "step", block, forcePageBreakBefore: fpb });
             } else if (block.type === "section") {
-              rows.push({ type: "section", block });
+              rows.push({ type: "section", block, forcePageBreakBefore: fpb });
             } else if (block.type === "parts") {
-              rows.push({ type: "parts", block });
+              rows.push({ type: "parts", block, forcePageBreakBefore: fpb });
             } else if (block.type === "photoarray") {
               const numRows =
                 Array.isArray(block.rows) && block.rows.length > 0
@@ -2924,10 +2931,13 @@
                   rowIdx: i,
                   isFirstInBlock: i === 0,
                   isLastInBlock: i === numRows - 1,
+                  // The break belongs to the BLOCK, so it sits on the first row
+                  // entry only - subsequent rows of the same block stay put.
+                  forcePageBreakBefore: i === 0 ? fpb : false,
                 });
               }
             } else if (block.type === "textbox") {
-              rows.push({ type: "textbox", block });
+              rows.push({ type: "textbox", block, forcePageBreakBefore: fpb });
             }
           }
           return rows;
@@ -3049,6 +3059,14 @@
               rh = estimateTextBoxHeight(row.block);
             } else {
               rh = STEP_ROW_HEIGHT;
+            }
+            // Explicit page break requested by the user. Only honoured if the
+            // current page already has rows; otherwise it would create a blank
+            // leading page (e.g. setting the flag on the first block in the doc).
+            if (row.forcePageBreakBefore && cur.length > 0) {
+              pages.push(cur);
+              cur = [];
+              h = 0;
             }
             const needed = (cur.length > 0 ? ROW_GAP : 0) + rh;
             if (h + needed > PAGE_CONTENT_HEIGHT && cur.length > 0) {
@@ -4543,10 +4561,43 @@
         function moveBlock(id, dir) {
           const idx = findBlockIndex(id);
           if (idx < 0) return;
-          const newIdx = idx + dir;
-          if (newIdx < 0 || newIdx >= state.blocks.length) return;
-          const removed = state.blocks.splice(idx, 1)[0];
-          state.blocks.splice(newIdx, 0, removed);
+          const block = state.blocks[idx];
+
+          if (dir === +1) {
+            const newIdx = idx + 1;
+            if (newIdx >= state.blocks.length) {
+              // No block below to swap with. Interpret as "push to next page" by
+              // setting an explicit page break before this block. Idempotent: if
+              // the flag is already set there's nothing further to do.
+              if (!block.forcePageBreakBefore) {
+                block.forcePageBreakBefore = true;
+                saveState();
+                focusBlockIdAfterRender = id;
+                render();
+              }
+              return;
+            }
+            const removed = state.blocks.splice(idx, 1)[0];
+            state.blocks.splice(newIdx, 0, removed);
+          } else if (dir === -1) {
+            // Up arrow: if the block is currently being held on a forced new
+            // page, clear that first (which pulls it back to the previous page)
+            // before considering an array swap.
+            if (block.forcePageBreakBefore) {
+              block.forcePageBreakBefore = false;
+              saveState();
+              focusBlockIdAfterRender = id;
+              render();
+              return;
+            }
+            const newIdx = idx - 1;
+            if (newIdx < 0) return;
+            const removed = state.blocks.splice(idx, 1)[0];
+            state.blocks.splice(newIdx, 0, removed);
+          } else {
+            return;
+          }
+
           saveState();
           focusBlockIdAfterRender = id;
           render();
