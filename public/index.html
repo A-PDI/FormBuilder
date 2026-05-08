@@ -774,6 +774,14 @@
         height: 0.4in;
       }
 
+      .row-spacer {
+        /* Empty vertical gap added by the down-arrow on the last block. The
+         inline style sets the height; flex: 0 0 auto keeps the gap from
+         being compressed by the content-area's flex layout. */
+        flex: 0 0 auto;
+        pointer-events: none;
+      }
+
       .row-parts {
         flex: 0 0 auto;
         min-height: 0.4in;
@@ -2643,12 +2651,28 @@
           );
           s.blocks.forEach((b) => {
             if (!b.id) b.id = genId();
-            // forcePageBreakBefore: applies to all block types. When true, the
-            // block starts a new page (provided the current page already has at
-            // least one row - we don't create empty leading pages). Toggled by
-            // the down-arrow on the last block, cleared by the up-arrow.
-            if (typeof b.forcePageBreakBefore !== "boolean")
-              b.forcePageBreakBefore = false;
+            // precedingSpacers: integer count of "spacer" rows to render above this
+            // block. Each spacer occupies one block-height of vertical space and
+            // is added/removed by the down/up arrows on the last block (a way to
+            // push a block lower on the page in block-height increments). Spacers
+            // can spill onto a previous/next page just like real rows.
+            if (
+              typeof b.precedingSpacers !== "number" ||
+              !isFinite(b.precedingSpacers) ||
+              b.precedingSpacers < 0
+            ) {
+              b.precedingSpacers = 0;
+            } else {
+              b.precedingSpacers = Math.floor(b.precedingSpacers);
+            }
+            // Back-compat: prior versions used forcePageBreakBefore=true to push a
+            // block onto the next page. Convert that to one spacer (the closest
+            // approximation), then drop the field. If the user wants more space
+            // they can keep clicking down.
+            if (b.forcePageBreakBefore === true && b.precedingSpacers === 0) {
+              b.precedingSpacers = 1;
+            }
+            delete b.forcePageBreakBefore;
             if (b.type === "step") {
               if (typeof b.img === "undefined") b.img = null;
               if (typeof b.text !== "string") b.text = "";
@@ -2774,6 +2798,13 @@
                       Array.isArray(r) && r.some((c) => typeof c === "string"),
                   );
                 });
+                // Legacy field from a prior version: forcePageBreakBefore is now
+                // migrated into precedingSpacers. Detecting it here ensures the
+                // migrated shape gets persisted back so we don't redo the work
+                // on every load.
+                const hasLegacyPageBreak = parsed.blocks.some(
+                  (b) => b && "forcePageBreakBefore" in b,
+                );
                 const needsRewrite =
                   !parsed.metaFields ||
                   typeof parsed.formType !== "string" ||
@@ -2782,7 +2813,8 @@
                   "rev" in parsed ||
                   "date" in parsed ||
                   hasNonCompactPhotoarray ||
-                  hasLegacyStringPhoto;
+                  hasLegacyStringPhoto ||
+                  hasLegacyPageBreak;
                 state = normalizeState(parsed);
                 if (needsRewrite) saveState();
                 return true;
@@ -2899,6 +2931,21 @@
         // ---------- Folding blocks into rows ----------
         // Steps pair greedily into 2-up rows; callouts always force a row break
         // and take their own full-width row.
+        // The "spacer" is a unit of vertical empty space that the user can stack
+        // before a block by clicking the down arrow on the last block. One spacer
+        // = one row-equivalent of the block - so clicking down on a step adds a
+        // step-height of space, clicking down on a callout adds a callout-height
+        // of space, etc. Photo arrays use one photo-row's worth.
+        function estimateSpacerHeight(block) {
+          if (!block) return STEP_ROW_HEIGHT;
+          if (block.type === "callout") return estimateCalloutHeight(block);
+          if (block.type === "section") return SECTION_ROW_HEIGHT;
+          if (block.type === "parts") return estimatePartsHeight(block);
+          if (block.type === "photoarray") return 2.5;
+          if (block.type === "textbox") return estimateTextBoxHeight(block);
+          return STEP_ROW_HEIGHT;
+        }
+
         function blocksToRows(blocks) {
           // Each block now occupies its own full-width row. Steps, callouts, and
           // section headers are structurally identical from a pagination standpoint;
@@ -2908,17 +2955,25 @@
           // paginatable so a multi-row block can split across pages instead of
           // forcing the whole block to bump to a new page (which would leave the
           // previous page mostly empty).
+          //
+          // precedingSpacers prepends N "spacer" rows before the block - that's
+          // how the down-arrow-on-last-block UX leaves block-height-sized empty
+          // gaps on the page.
           const rows = [];
           for (const block of blocks) {
-            const fpb = !!block.forcePageBreakBefore;
+            const sh = estimateSpacerHeight(block);
+            const spacers = Math.max(0, block.precedingSpacers | 0);
+            for (let s = 0; s < spacers; s++) {
+              rows.push({ type: "spacer", block, height: sh });
+            }
             if (block.type === "callout") {
-              rows.push({ type: "callout", block, forcePageBreakBefore: fpb });
+              rows.push({ type: "callout", block });
             } else if (block.type === "step") {
-              rows.push({ type: "step", block, forcePageBreakBefore: fpb });
+              rows.push({ type: "step", block });
             } else if (block.type === "section") {
-              rows.push({ type: "section", block, forcePageBreakBefore: fpb });
+              rows.push({ type: "section", block });
             } else if (block.type === "parts") {
-              rows.push({ type: "parts", block, forcePageBreakBefore: fpb });
+              rows.push({ type: "parts", block });
             } else if (block.type === "photoarray") {
               const numRows =
                 Array.isArray(block.rows) && block.rows.length > 0
@@ -2931,13 +2986,10 @@
                   rowIdx: i,
                   isFirstInBlock: i === 0,
                   isLastInBlock: i === numRows - 1,
-                  // The break belongs to the BLOCK, so it sits on the first row
-                  // entry only - subsequent rows of the same block stay put.
-                  forcePageBreakBefore: i === 0 ? fpb : false,
                 });
               }
             } else if (block.type === "textbox") {
-              rows.push({ type: "textbox", block, forcePageBreakBefore: fpb });
+              rows.push({ type: "textbox", block });
             }
           }
           return rows;
@@ -3044,7 +3096,9 @@
           let h = 0;
           for (const row of rows) {
             let rh;
-            if (row.type === "callout") {
+            if (row.type === "spacer") {
+              rh = row.height;
+            } else if (row.type === "callout") {
               rh = estimateCalloutHeight(row.block);
             } else if (row.type === "section") {
               rh = SECTION_ROW_HEIGHT;
@@ -3059,14 +3113,6 @@
               rh = estimateTextBoxHeight(row.block);
             } else {
               rh = STEP_ROW_HEIGHT;
-            }
-            // Explicit page break requested by the user. Only honoured if the
-            // current page already has rows; otherwise it would create a blank
-            // leading page (e.g. setting the flag on the first block in the doc).
-            if (row.forcePageBreakBefore && cur.length > 0) {
-              pages.push(cur);
-              cur = [];
-              h = 0;
             }
             const needed = (cur.length > 0 ? ROW_GAP : 0) + rh;
             if (h + needed > PAGE_CONTENT_HEIGHT && cur.length > 0) {
@@ -3425,6 +3471,17 @@
         }
 
         function buildRowElement(row) {
+          if (row.type === "spacer") {
+            const el = document.createElement("div");
+            el.className = "row row-spacer";
+            // Height drives the visible gap. The block reference is purely for
+            // diagnostics (data-attribute) - spacers have no controls or text.
+            el.style.height = row.height + "in";
+            el.setAttribute("aria-hidden", "true");
+            if (row.block && row.block.id)
+              el.dataset.spacerForBlock = row.block.id;
+            return el;
+          }
           if (row.type === "callout") {
             const el = document.createElement("div");
             el.className = "row row-callout";
@@ -4566,25 +4623,27 @@
           if (dir === +1) {
             const newIdx = idx + 1;
             if (newIdx >= state.blocks.length) {
-              // No block below to swap with. Interpret as "push to next page" by
-              // setting an explicit page break before this block. Idempotent: if
-              // the flag is already set there's nothing further to do.
-              if (!block.forcePageBreakBefore) {
-                block.forcePageBreakBefore = true;
-                saveState();
-                focusBlockIdAfterRender = id;
-                render();
-              }
+              // No block below to swap with. Push this block down by one
+              // block-height of empty space (a "spacer"). Each repeated click
+              // adds another spacer; once the cumulative gap pushes the block
+              // past the page boundary, pagination naturally moves it onto the
+              // next page. There's no upper cap - if the user wants to stack a
+              // dozen spacers and walk the block across multiple pages, that's
+              // allowed.
+              block.precedingSpacers = (block.precedingSpacers | 0) + 1;
+              saveState();
+              focusBlockIdAfterRender = id;
+              render();
               return;
             }
             const removed = state.blocks.splice(idx, 1)[0];
             state.blocks.splice(newIdx, 0, removed);
           } else if (dir === -1) {
-            // Up arrow: if the block is currently being held on a forced new
-            // page, clear that first (which pulls it back to the previous page)
-            // before considering an array swap.
-            if (block.forcePageBreakBefore) {
-              block.forcePageBreakBefore = false;
+            // Up arrow: peel off any spacers above this block first (they're
+            // "yours" - you put them there with previous down clicks). Only after
+            // the spacers are gone does up arrow fall through to the array swap.
+            if ((block.precedingSpacers | 0) > 0) {
+              block.precedingSpacers = (block.precedingSpacers | 0) - 1;
               saveState();
               focusBlockIdAfterRender = id;
               render();
@@ -4881,9 +4940,20 @@
           const backdrop = document.getElementById("sidebarBackdrop");
 
           if (hamburgerBtn) {
+            // preventDefault on mousedown so opening the menu doesn't steal focus
+            // (and consequently the selection range) from a contenteditable. Same
+            // trick used on the format buttons themselves - this just extends it
+            // to the hamburger so the chain "highlight text -> open menu -> click
+            // Bold" actually preserves the selection end to end.
+            hamburgerBtn.addEventListener("mousedown", (e) =>
+              e.preventDefault(),
+            );
             hamburgerBtn.addEventListener("click", toggleSidebar);
           }
           if (collapseBtn) {
+            collapseBtn.addEventListener("mousedown", (e) =>
+              e.preventDefault(),
+            );
             collapseBtn.addEventListener("click", () =>
               setSidebarCollapsed(true, true),
             );
