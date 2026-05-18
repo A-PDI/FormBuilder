@@ -935,6 +935,58 @@
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+
+    /* ---------- Optional block title bar ---------- */
+    /* Used by Image|Text (step) and Photo Array blocks. Visually mirrors the
+       Chart block's header so titled blocks read as a family. The bar is
+       conditionally rendered - block.title === undefined means "no bar".
+       Toggled on by the "T" button in block-controls, off by the bar's own
+       \u2715 button. */
+    .block-title-bar {
+      background: var(--color-cobalt);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .block-title-text {
+      flex: 1;
+      outline: none;
+      cursor: text;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    .block-title-text:focus { background: rgba(255,255,255,0.18); border-radius: 2px; }
+    .block-title-text:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(255,255,255,0.65);
+      font-weight: 400;
+      font-style: italic;
+      letter-spacing: normal;
+    }
+    .block-title-remove {
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: white;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      line-height: 1;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .block-title-remove:hover { background: rgba(0,0,0,0.32); }
     .parts-header-label {
       flex: 1;
       outline: none;
@@ -1261,6 +1313,17 @@
       font-style: italic;
       pointer-events: none;
     }
+    /* When the block has an optional title bar above, the step-number can't
+       stick out above the step (the title bar is there). Tuck it just
+       inside the top-left of the step instead. */
+    .step.has-title .step-number {
+      top: 4px;
+      left: 4px;
+    }
+    .step.has-title {
+      /* Slight extra top padding so the number badge has room. */
+      padding-top: 18px;
+    }
 
     /* execCommand fontSize emits CSS keyword sizes; map to print-friendly pixels. */
     .rich-text-editor [style*="font-size: small"]    { font-size: 9px    !important; line-height: 1.25; }
@@ -1391,6 +1454,9 @@
     }
     .block-controls button:hover { background: rgba(0, 0, 0, 0.85); }
     .block-controls button.delete:hover { background: var(--danger); }
+    /* Add-title button tints to the title-bar color on hover so the user can
+       see what's about to appear. */
+    .block-controls button.add-title:hover { background: var(--color-cobalt); }
 
     /* ---------- Empty state ---------- */
     .empty-state {
@@ -1782,6 +1848,11 @@
   const CALLOUT_ROW_HEIGHT  = 0.32;
   const SECTION_ROW_HEIGHT  = 0.60;
   const ROW_GAP             = 0.10;
+  // Optional title bar (Image|Text and Photo Array). Bar height equals
+  // its CSS layout (4px top + ~14px text + 4px bottom ≈ 22px ≈ 0.23in).
+  // The pagination math adds this whenever block.title is a string, since
+  // that's when the bar actually renders.
+  const TITLE_BAR_HEIGHT    = 0.23;
 
   // Parts list table heights:
   // Brown header bar (~0.30") + column header row (~0.25")
@@ -2175,6 +2246,9 @@
         if (typeof b.text !== 'string') b.text = '';
         // Drop any legacy orientation field; the layout is now fixed at 2.5x2.5.
         if ('orientation' in b) delete b.orientation;
+        // Optional title bar above the image/text. Undefined = no bar,
+        // string (even '') = bar rendered. Anything else collapses to no bar.
+        if ('title' in b && typeof b.title !== 'string') delete b.title;
       } else if (b.type === 'callout') {
         if (!CALLOUT_KINDS[b.kind]) b.kind = 'note';
         if (typeof b.text !== 'string') b.text = '';
@@ -2234,6 +2308,9 @@
           b.rows = [[null, null, null]];
         }
         if ('orientation' in b) delete b.orientation;
+        // Optional title bar above the photo grid. Undefined = no bar,
+        // string = bar rendered with that text. See step branch above.
+        if ('title' in b && typeof b.title !== 'string') delete b.title;
       } else if (b.type === 'textbox') {
         if (typeof b.text !== 'string') b.text = '';
       }
@@ -2411,12 +2488,21 @@
   // of space, etc. Photo arrays use one photo-row's worth.
   function estimateSpacerHeight(block) {
     if (!block) return STEP_ROW_HEIGHT;
-    if (block.type === 'callout')    return estimateCalloutHeight(block);
-    if (block.type === 'section')    return SECTION_ROW_HEIGHT;
-    if (block.type === 'parts')      return estimatePartsHeight(block);
-    if (block.type === 'photoarray') return 2.50;
-    if (block.type === 'textbox')    return estimateTextBoxHeight(block);
-    return STEP_ROW_HEIGHT;
+    let h;
+    if (block.type === 'callout')           h = estimateCalloutHeight(block);
+    else if (block.type === 'section')      h = SECTION_ROW_HEIGHT;
+    else if (block.type === 'parts')        h = estimatePartsHeight(block);
+    else if (block.type === 'photoarray')   h = 2.50;
+    else if (block.type === 'textbox')      h = estimateTextBoxHeight(block);
+    else                                    h = STEP_ROW_HEIGHT;
+    // The optional title bar is part of the block's visible height. Including
+    // it here means one down-arrow click moves the block down by exactly its
+    // own rendered height, matching the user's mental model.
+    if ((block.type === 'step' || block.type === 'photoarray')
+        && typeof block.title === 'string') {
+      h += TITLE_BAR_HEIGHT;
+    }
+    return h;
   }
 
   function blocksToRows(blocks) {
@@ -2572,10 +2658,18 @@
         // 0.10in gap between consecutive rows of the same block (matching
         // the original full-block estimate of N*2.50 + (N-1)*0.10).
         rh = 2.50;
+        // Title bar appears once per block on its FIRST row only.
+        if (row.isFirstInBlock && typeof row.block.title === 'string') {
+          rh += TITLE_BAR_HEIGHT;
+        }
       } else if (row.type === 'textbox') {
         rh = estimateTextBoxHeight(row.block);
       } else {
+        // step
         rh = STEP_ROW_HEIGHT;
+        if (typeof row.block.title === 'string') {
+          rh += TITLE_BAR_HEIGHT;
+        }
       }
       const needed = (cur.length > 0 ? ROW_GAP : 0) + rh;
       if (h + needed > PAGE_CONTENT_HEIGHT && cur.length > 0) {
@@ -2934,6 +3028,11 @@
     if (row.type === 'photoarraychunk') {
       const el = document.createElement('div');
       el.className = 'row row-photoarray';
+      // Optional title bar above the photo grid. Only on the FIRST chunk -
+      // a multi-page photo array shouldn't repeat its title on every page.
+      if (row.isFirstChunk && typeof row.block.title === 'string') {
+        el.appendChild(buildBlockTitleBar(row.block));
+      }
       el.appendChild(buildPhotoArrayElement(row.block, {
         rowIndices: row.rowIndices,
         isFirstChunk: row.isFirstChunk,
@@ -2946,6 +3045,9 @@
       // any caller that bypassed blocksToRows expansion.
       const el = document.createElement('div');
       el.className = 'row row-photoarray';
+      if (typeof row.block.title === 'string') {
+        el.appendChild(buildBlockTitleBar(row.block));
+      }
       el.appendChild(buildPhotoArrayElement(row.block));
       return el;
     }
@@ -2958,13 +3060,18 @@
     // step
     const el = document.createElement('div');
     el.className = 'row row-step';
+    if (typeof row.block.title === 'string') {
+      el.appendChild(buildBlockTitleBar(row.block));
+    }
     el.appendChild(buildStepElement(row.block));
     return el;
   }
 
   function buildStepElement(block) {
     const el = document.createElement('div');
-    el.className = 'step';
+    // .has-title relocates the step-number badge inside the step body so
+    // it doesn't try to "stick out" above the cobalt title bar.
+    el.className = 'step' + (typeof block.title === 'string' ? ' has-title' : '');
     el.dataset.blockId = block.id;
 
     const num = document.createElement('div');
@@ -4011,6 +4118,23 @@
     const wrap = document.createElement('div');
     wrap.className = 'block-controls no-print';
 
+    // Optional title bar toggle. Only step (Image|Text) and photoarray
+    // blocks support a title; the button is only offered when the block
+    // doesn't already have one (the title bar itself has its own ✕ for
+    // removal).
+    const titleAble = (block.type === 'step' || block.type === 'photoarray');
+    if (titleAble && typeof block.title !== 'string') {
+      const titleBtn = document.createElement('button');
+      titleBtn.textContent = 'T';
+      titleBtn.title = 'Add a title bar to this block';
+      titleBtn.className = 'add-title';
+      titleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addBlockTitle(block.id);
+      });
+      wrap.appendChild(titleBtn);
+    }
+
     const upBtn = document.createElement('button');
     upBtn.textContent = '\u2191';
     upBtn.title = 'Move up';
@@ -4040,6 +4164,95 @@
     wrap.appendChild(downBtn);
     wrap.appendChild(delBtn);
     return wrap;
+  }
+
+  // Add an optional title bar to a step or photoarray block. Sets
+  // block.title to '' so it renders with the placeholder, then focuses
+  // the new editable so the user can type immediately.
+  function addBlockTitle(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || (b.type !== 'step' && b.type !== 'photoarray')) return;
+    if (typeof b.title === 'string') return;
+    b.title = '';
+    saveState();
+    render();
+    // Focus the newly-rendered bar so the user can start typing.
+    const titleEl = document.querySelector(
+      '[data-block-id="' + blockId + '"] .block-title-text'
+    );
+    if (titleEl) titleEl.focus();
+  }
+
+  function removeBlockTitle(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || typeof b.title !== 'string') return;
+    delete b.title;
+    saveState();
+    render();
+  }
+
+  // Build the title bar element. Caller is responsible for inserting it at
+  // the top of the block's DOM. The bar is editable (rich-text-editor so
+  // the floating format toolbar appears on focus) and carries a ✕ that
+  // removes the bar entirely.
+  function buildBlockTitleBar(block) {
+    const bar = document.createElement('div');
+    bar.className = 'block-title-bar no-print-no'; // bar prints with the block
+    const text = document.createElement('div');
+    text.className = 'block-title-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.spellcheck = true;
+    text.dataset.placeholder = 'Title';
+    text.dataset.blockId = block.id;
+    text.innerHTML = block.title || '';
+    // Single-line: block Enter (blur to finish), strip newlines on paste.
+    text.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        text.blur();
+      }
+    });
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (flat) document.execCommand('insertText', false, flat);
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b && typeof b.title === 'string') {
+        b.title = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Reset stray <br> so placeholder reappears on clear.
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b && typeof b.title === 'string') {
+          b.title = '';
+          saveState();
+        }
+      }
+    });
+    bar.appendChild(text);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'block-title-remove no-print';
+    removeBtn.textContent = '\u2715';
+    removeBtn.title = 'Remove title bar';
+    removeBtn.addEventListener('mousedown', e => e.preventDefault());
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeBlockTitle(block.id);
+    });
+    bar.appendChild(removeBtn);
+
+    return bar;
   }
 
   function buildClearButton(title, onClick) {
