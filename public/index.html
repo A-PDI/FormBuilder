@@ -1115,11 +1115,16 @@
     /* ---------- Section header block ---------- */
     .section-header {
       display: flex;
-      align-items: flex-end;
+      /* Title sits at the TOP of the row. The empty space below acts as a
+         visual section separator before the next block. Bottom-aligning
+         caused the empty space to land above the title - when a section
+         was the first block on a page that gap read as "extra room below
+         the page header" (and was inconsistent with pages whose first
+         block wasn't a section). */
+      align-items: flex-start;
       background: white;
       color: var(--navy);
-      border-bottom: 2.5px solid var(--navy);
-      padding: 0 2px 4px;
+      padding: 0 2px;
       position: relative;
       height: 100%;
       -webkit-print-color-adjust: exact;
@@ -1139,11 +1144,10 @@
       text-overflow: clip;
       min-width: 0;
       line-height: 1.2;
-      /* Small left buffer so the first character isn't clipped by the
-         overflow:hidden box. Mobile WebKit/Blink can add a small pre-glyph
-         offset when letter-spacing + uppercase combine, and without a
-         buffer the first letter renders just past the box's left edge. */
-      padding-left: 4px;
+      /* Underline now lives on the text element so it sits directly under
+         the title rather than at the very bottom of the row. */
+      border-bottom: 2.5px solid var(--navy);
+      padding: 0 0 4px 4px;
     }
     .section-header-text:focus { background: var(--frost); border-radius: 2px; }
     .section-header-text:empty::before {
