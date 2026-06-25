@@ -1,1 +1,5283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1D2B4F">
+  <title>Work Instruction Builder</title>
+  <style>
+    * { box-sizing: border-box; }
 
+    :root {
+      --navy:     #1D2B4F;
+      --steel:    #B8C4D8;
+      --frost:    #E8EBF0;
+      --charcoal: #595959;
+      --white:    #FFFFFF;
+      --dew:      #d0d7e3;
+      /* Reds */
+      --color-ember:    #b85c58;
+      --color-rose:     #c07080;
+      --color-blush:    #d49098;
+      /* Oranges */
+      --color-rust:     #b87550;
+      --color-clay:     #c08560;
+      --color-terra:    #c89070;
+      /* Yellows */
+      --color-gold:     #b89840;
+      --color-straw:    #c4a860;
+      --color-flax:     #d0bc80;
+      /* Greens */
+      --color-pine:     #477060;
+      --color-fern:     #5e8a6a;
+      --color-sage:     #7a9e85;
+      --color-moss:     #708c60;
+      --color-reed:     #90a870;
+      /* Teals */
+      --color-teal:     #5a8e90;
+      --color-seafoam:  #6ea0a0;
+      /* Blues */
+      --color-cobalt:     #4e72a0;
+      --color-sky:        #6888b0;
+      --color-periwinkle: #8898c8;
+      /* Violets */
+      --color-plum:     #826090;
+      --color-iris:     #7870a8;
+      --color-lavender: #9888c0;
+      --color-mauve:    #a07898;
+      /* Legacy palette - kept so existing buttons/links don't break.
+         Insert-block colors now use the --color-* vars above. */
+      --danger:   #b3261e;
+      --success:  #2e7d32;
+      --info:     #1565c0;
+      --amber:    #f4b400;
+      --orange:   #e67e22;
+      --purple:   #5d3fd3;
+      --teal:     #00695c;
+      --cyan:     #0288d1;
+      --magenta:  #ad1457;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
+      background: #d4d7dc;
+      color: var(--charcoal);
+    }
+
+    /* ---------- Layout ---------- */
+    body {
+      padding-top: calc(48px + env(safe-area-inset-top, 0px));
+      /* Sidebar is a hamburger-style overlay; content does not get pushed. */
+      padding-left: 0;
+    }
+
+    /* ---------- Top bar (file ops) ---------- */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      /* Reserve space for the iOS status bar (notch / dynamic island)
+         when the app is added to the home screen. env() falls back to 0
+         in browsers/contexts that don't expose safe-area insets. */
+      padding: env(safe-area-inset-top, 0) 14px 0
+               max(14px, env(safe-area-inset-right, 0));
+      height: calc(48px + env(safe-area-inset-top, 0px));
+      background: var(--navy);
+      color: white;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    .topbar h1 {
+      margin: 0 14px 0 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .topbar button {
+      padding: 7px 13px;
+      border: none;
+      background: var(--steel);
+      color: var(--navy);
+      cursor: pointer;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 13px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .topbar button:hover { background: var(--frost); }
+    .topbar button.primary { background: var(--success); color: white; }
+    .topbar button.primary:hover { background: #3a8e3f; }
+    .topbar .spacer { flex: 1; }
+    .topbar .hint { font-size: 12px; opacity: 0.85; }
+    .topbar .btn-label-short { display: none; }
+
+    /* ---------- Hamburger button (in topbar) ---------- */
+    .topbar .hamburger-btn {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+      width: 38px;
+      height: 36px;
+      padding: 0;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .topbar .hamburger-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.6);
+    }
+    .topbar .hamburger-btn .hamburger-icon {
+      position: relative;
+      display: inline-block;
+      width: 18px;
+      height: 14px;
+    }
+    .topbar .hamburger-btn .hamburger-icon::before,
+    .topbar .hamburger-btn .hamburger-icon::after,
+    .topbar .hamburger-btn .hamburger-icon > span {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: white;
+      border-radius: 1px;
+      transition: transform 0.18s ease, opacity 0.18s ease, top 0.18s ease;
+    }
+    .topbar .hamburger-btn .hamburger-icon::before { top: 0; }
+    .topbar .hamburger-btn .hamburger-icon > span { top: 6px; }
+    .topbar .hamburger-btn .hamburger-icon::after  { top: 12px; }
+    /* When the menu is open, morph hamburger -> X */
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::before {
+      top: 6px; transform: rotate(45deg);
+    }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::after {
+      top: 6px; transform: rotate(-45deg);
+    }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon > span {
+      opacity: 0;
+    }
+
+    /* ---------- Sidebar (hamburger menu panel) ---------- */
+    .sidebar {
+      position: fixed;
+      top: calc(48px + env(safe-area-inset-top, 0px));
+      left: 0;
+      bottom: 0;
+      width: 300px;
+      max-width: 88vw;
+      background: #f1f3f7;
+      border-right: 1px solid var(--steel);
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 220;
+      display: flex;
+      flex-direction: column;
+      transform-origin: top left;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      box-shadow: 4px 6px 18px rgba(0,0,0,0.22);
+    }
+    body.sidebar-collapsed .sidebar {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Backdrop dim while the menu is open (clicking it closes the menu) */
+    .sidebar-backdrop {
+      position: fixed;
+      top: calc(48px + env(safe-area-inset-top, 0px));
+      left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.32);
+      z-index: 210;
+      opacity: 1;
+      transition: opacity 0.18s ease;
+    }
+    body.sidebar-collapsed .sidebar-backdrop {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .sidebar-header {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px 6px 14px;
+      background: var(--frost);
+      border-bottom: 1px solid var(--steel);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--charcoal);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+    .sidebar-toggle {
+      background: white;
+      border: 1px solid var(--steel);
+      color: var(--charcoal);
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 3px;
+      font-size: 16px;
+      font-family: inherit;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar-toggle:hover { background: var(--frost); border-color: var(--navy); }
+    .sidebar-section {
+      padding: 12px 14px 14px;
+      border-bottom: 1px solid var(--steel);
+    }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-section h3 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--charcoal);
+    }
+    .sidebar-section h4 {
+      margin: 12px 0 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--charcoal);
+      opacity: 0.85;
+    }
+
+    /* Block insertion buttons (full-width, stacked) */
+    .sidebar-block-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sidebar-block-list button {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      letter-spacing: 0.3px;
+    }
+    .sidebar-block-list button:hover {
+      filter: brightness(1.07);
+      border-color: var(--navy);
+    }
+    .sidebar-block-list .add-step {
+      background: #e8eaed;
+      color: var(--charcoal);
+      border-color: #c8ccd1;
+    }
+    /* Sidebar buttons mirror the on-page callout palette, so each button
+       reads like the block it inserts. Borders match the background for a
+       clean flat look. */
+    .sidebar-block-list .add-warning  { background: var(--color-ember);   color: white; border-color: var(--color-ember); }
+    .sidebar-block-list .add-caution  { background: var(--color-gold);    color: white; border-color: var(--color-gold); }
+    .sidebar-block-list .add-note     { background: var(--color-cobalt);  color: white; border-color: var(--color-cobalt); }
+    .sidebar-block-list .add-watch    { background: var(--color-rust);    color: white; border-color: var(--color-rust); }
+    .sidebar-block-list .add-monitor  { background: var(--color-plum);    color: white; border-color: var(--color-plum); }
+    .sidebar-block-list .add-record   { background: var(--color-pine);    color: white; border-color: var(--color-pine); }
+    .sidebar-block-list .add-tools    { background: var(--color-teal);    color: white; border-color: var(--color-teal); }
+    .sidebar-block-list .add-inspect  { background: var(--color-sky);     color: white; border-color: var(--color-sky); }
+    .sidebar-block-list .add-measure  { background: var(--color-seafoam); color: white; border-color: var(--color-seafoam); }
+    .sidebar-block-list .add-finding  { background: var(--color-fern);    color: white; border-color: var(--color-fern); }
+    .sidebar-block-list .add-concern  { background: var(--color-rose);    color: white; border-color: var(--color-rose); }
+    .sidebar-block-list .add-analysis { background: var(--color-iris);    color: white; border-color: var(--color-iris); }
+    /* Chart was Parts List - uses the user-specified blue */
+    .sidebar-block-list .add-parts {
+      background: var(--color-cobalt);
+      color: white;
+      border-color: var(--color-cobalt);
+    }
+    .sidebar-block-list .add-photoarray {
+      background: #d8dde4;
+      color: var(--charcoal);
+      border-color: #b8c0cc;
+    }
+    .sidebar-block-list .add-textbox {
+      background: white;
+      color: var(--charcoal);
+      border: 1px dashed var(--steel);
+      font-weight: 500;
+      font-style: italic;
+    }
+    .sidebar-block-list .add-section {
+      background: white;
+      color: var(--navy);
+      border-color: var(--navy);
+      border-width: 2px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+    }
+
+    /* Format section rows */
+    .sidebar-fmt-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .sidebar-fmt-row:last-child { margin-bottom: 0; }
+    .sidebar-fmt-row .label {
+      font-size: 11px;
+      color: var(--charcoal);
+      font-weight: 600;
+      margin-right: 2px;
+    }
+    .sidebar-fmt-row button {
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      padding: 4px 9px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      min-height: 26px;
+    }
+    .sidebar-fmt-row button:hover { border-color: var(--navy); }
+    .sidebar-fmt-row button:active { background: var(--frost); }
+    .sidebar-fmt-row .fmt-bold {
+      font-weight: 800;
+      width: 30px;
+      font-size: 14px;
+    }
+    .sidebar-fmt-row .size-btn { width: 28px; padding: 4px 0; text-align: center; }
+    .sidebar-fmt-row .size-btn[data-arg="2"] { font-size: 10px; }
+    .sidebar-fmt-row .size-btn[data-arg="3"] { font-size: 12px; }
+    .sidebar-fmt-row .size-btn[data-arg="4"] { font-size: 14px; }
+    .sidebar-fmt-row .size-btn[data-arg="5"] { font-size: 16px; }
+    .sidebar-fmt-row .color-swatch {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 2px solid white;
+      outline: 1px solid var(--steel);
+      cursor: pointer;
+      border-radius: 3px;
+      min-height: 0;
+    }
+    .sidebar-fmt-row .color-swatch:hover { outline-color: var(--navy); }
+
+    /* Inline-icon badge grid (2x2) */
+    .sidebar-icon-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .sidebar-icon-grid button {
+      border: 1px solid var(--steel);
+      padding: 6px 4px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      min-height: 28px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .sidebar-icon-grid .fmt-icon-warning { background: var(--danger); color: white; border-color: var(--danger); }
+    .sidebar-icon-grid .fmt-icon-caution { background: var(--amber);  color: #2c1f00; border-color: #d99e00; }
+    .sidebar-icon-grid .fmt-icon-inspect { background: var(--info);   color: white; border-color: var(--info); }
+    .sidebar-icon-grid .fmt-icon-torque  { background: #424242;       color: white; border-color: #424242; }
+
+    .sidebar-clear-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 6px 8px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .sidebar-clear-btn:hover { border-color: var(--navy); }
+
+    /* ---------- Floating format toolbar ---------- */
+    /* Appears when any rich-text editor has focus. Buttons share their
+       handler wiring with the sidebar version - same data-cmd attributes,
+       same applyFormat() entry point. */
+    .floating-fmt-toolbar {
+      position: fixed;
+      top: calc(48px + env(safe-area-inset-top, 0px) + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 1px solid var(--steel);
+      border-radius: 6px;
+      padding: 5px 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      z-index: 250;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      max-width: calc(100vw - 24px);
+    }
+    .floating-fmt-toolbar[hidden] { display: none; }
+    .floating-fmt-toolbar button {
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 7px;
+      min-width: 26px;
+      min-height: 26px;
+      line-height: 1;
+    }
+    .floating-fmt-toolbar button:hover { border-color: var(--navy); }
+    .floating-fmt-toolbar button:active { background: var(--frost); }
+    .floating-fmt-toolbar .fmt-bold {
+      font-weight: 700;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .floating-fmt-toolbar .size-btn { padding: 4px 6px; }
+    .floating-fmt-toolbar .size-btn[data-arg="2"] { font-size: 10px; }
+    .floating-fmt-toolbar .size-btn[data-arg="3"] { font-size: 12px; }
+    .floating-fmt-toolbar .size-btn[data-arg="4"] { font-size: 14px; }
+    .floating-fmt-toolbar .size-btn[data-arg="5"] { font-size: 16px; }
+    .floating-fmt-toolbar .color-swatch {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      padding: 0;
+      border: 1px solid #999;
+      border-radius: 3px;
+      outline: 2px solid transparent;
+      outline-offset: 0;
+    }
+    .floating-fmt-toolbar .color-swatch:hover { outline-color: var(--navy); }
+    .floating-fmt-toolbar .floating-fmt-sep {
+      width: 1px;
+      align-self: stretch;
+      background: var(--frost);
+      margin: 2px 4px;
+    }
+    .floating-fmt-toolbar .floating-fmt-label {
+      font-size: 11px;
+      color: var(--charcoal);
+      font-weight: 600;
+      margin-right: 2px;
+    }
+    .floating-fmt-toolbar .floating-fmt-clear {
+      font-size: 14px;
+      padding: 4px 8px;
+    }
+    /* Compact variant for mobile - smaller buttons, drop labels via media. */
+    @media (max-width: 600px) {
+      .floating-fmt-toolbar {
+        padding: 4px 6px;
+        gap: 3px;
+      }
+      .floating-fmt-toolbar .floating-fmt-label { display: none; }
+      .floating-fmt-toolbar button { min-width: 30px; min-height: 30px; }
+    }
+
+    /* ---------- Pages ---------- */
+    .pages-container {
+      padding: 22px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* Letter size: 8.5 x 11 inches */
+    .page {
+      width: 8.5in;
+      height: 11in;
+      background: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+      padding: 0.10in 0.25in 0.25in;   /* top right/left bottom — tighter top */
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      /* No overflow:hidden here. The print media block clips to page bounds
+         for clean printed output, but on screen we want no-print affordances
+         like the photo-array action strip ("+ Add Photo" / "Delete Row") to
+         remain visible when the row ending sits at the bottom of the page. */
+    }
+
+    /* ---------- Header ---------- */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    .logo-area {
+      width: 1.4in;
+      height: 0.85in;
+      border: 2px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+    .logo-area:hover { background: var(--frost); }
+    .logo-area.has-image { border-style: solid; border-color: transparent; }
+    .logo-area.dragover  { background: var(--frost); border-color: var(--navy); }
+    .logo-area img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-area .placeholder {
+      color: #888;
+      font-size: 10.5px;
+      text-align: center;
+      pointer-events: none;
+      line-height: 1.3;
+    }
+    .logo-area .clear-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .logo-area:hover .clear-btn { display: block; }
+
+    .header-info { flex: 1; min-width: 0; }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .title-field {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+      border: none;
+      flex: 1;
+      min-width: 0;
+      outline: none;
+      font-family: inherit;
+      padding: 1px 0;
+      background: transparent;
+    }
+    .title-field::placeholder { color: var(--steel); font-style: italic; font-weight: 500; }
+
+    .form-type-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .form-type-selector label {
+      color: var(--charcoal);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .form-type-select {
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 6px;
+      border: 1px solid var(--steel);
+      border-radius: 3px;
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+    }
+    .form-type-select:hover { border-color: var(--navy); }
+    .form-type-select:focus { outline: 2px solid var(--navy); outline-offset: -1px; }
+
+    .meta-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 5px;
+      font-size: 11px;
+      flex-wrap: wrap;
+    }
+    .meta-field { display: flex; align-items: baseline; gap: 4px; }
+    .meta-field label { font-weight: 700; color: var(--navy); white-space: nowrap; }
+    .meta-field input {
+      border: none;
+      border-bottom: 1px solid var(--steel);
+      outline: none;
+      padding: 1px 2px;
+      font-family: inherit;
+      font-size: 11px;
+      background: transparent;
+      color: var(--charcoal);
+    }
+    .meta-field input:focus { border-bottom-color: var(--navy); }
+
+    /* ---------- Content area ---------- */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.10in;
+      padding-top: 0.11in;          /* room for first-row step-number tabs */
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .row-step {
+      flex: 0 0 auto;
+      min-height: 2.15in;
+    }
+
+    .row-callout {
+      flex: 0 0 auto;
+      min-height: 0.32in;
+    }
+
+    .row-section {
+      flex: 0 0 0.60in;
+      height: 0.60in;
+    }
+
+    .row-spacer {
+      /* Empty vertical gap added by the down-arrow on the last block. The
+         inline style sets the height; flex: 0 0 auto keeps the gap from
+         being compressed by the content-area's flex layout. */
+      flex: 0 0 auto;
+      pointer-events: none;
+    }
+
+    .row-parts {
+      flex: 0 0 auto;
+      min-height: 0.40in;
+    }
+
+    .row-photoarray {
+      flex: 0 0 auto;
+      min-height: 2.60in;
+    }
+
+    .row-textbox {
+      flex: 0 0 auto;
+      min-height: 0.50in;
+    }
+
+    /* ---------- Photo array block ---------- */
+    .photoarray-block {
+      background: white;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.10in;
+    }
+    .photoarray-row {
+      display: grid;
+      gap: 0.10in;
+      width: 7.70in;
+      max-width: 100%;
+      margin: 0 auto;
+      height: 2.50in;
+    }
+    /* The count-N class is set by buildPhotoArrayElement based on how many
+       images the row actually contains. Empty rows get count-3 so the user
+       sees three placeholder cells to click. */
+    .photoarray-row.count-1 { grid-template-columns: 1fr; }
+    .photoarray-row.count-2 { grid-template-columns: 1fr 1fr; }
+    .photoarray-row.count-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .photoarray-cell {
+      background: var(--frost);
+      border: 1px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+    }
+    /* Empty cell: center the placeholder text vertically and horizontally. */
+    .photoarray-cell:not(.has-image) {
+      align-items: center;
+      justify-content: center;
+    }
+    .photoarray-cell:hover { background: #dde4ee; }
+    .photoarray-cell:focus {
+      outline: 2px solid var(--navy);
+      outline-offset: 2px;
+      background: #dde4ee;
+    }
+    .photoarray-cell:focus:not(.has-image) { background: var(--frost); }
+    .photoarray-cell.has-image { background: white; border-style: solid; border-color: var(--frost); }
+    .photoarray-cell.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
+    /* Image area (only inside has-image cells). Takes all space the caption
+       isn't using; image scales to fit while preserving aspect ratio. */
+    .photoarray-cell-image {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .photoarray-cell-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    /* Caption: single-line input pinned to the bottom of the cell. Renders as
+       plain italic text in print (border/background drop). */
+    .photoarray-caption {
+      flex: 0 0 auto;
+      border: none;
+      border-top: 1px solid var(--frost);
+      outline: none;
+      background: transparent;
+      text-align: center;
+      font-size: 11px;
+      font-style: italic;
+      color: var(--charcoal);
+      padding: 2px 6px;
+      width: 100%;
+      height: 20px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .photoarray-caption:focus { background: rgba(232, 235, 240, 0.5); }
+    .photoarray-caption::placeholder { color: var(--steel); font-style: italic; }
+    .photoarray-cell .placeholder {
+      color: #888;
+      font-size: 10px;
+      text-align: center;
+      padding: 4px;
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    /* Cell clear button anchored bottom-right. The block-level controls
+       (up / down / delete) live at the block's top-right, so anchoring the
+       cell clear button there caused them to overlap on the rightmost cell.
+       Bottom-right keeps the button reachable in every layout. */
+    .photoarray-cell .clear-btn {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.65);
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .photoarray-cell:hover .clear-btn { display: block; }
+    /* Per-row delete: ✕ button at right edge of each row, hidden in print */
+    .photoarray-row-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Inline action strip below each row. Holds the "+ Add Photo" and
+       "Delete Row" buttons in plain sight (the previous floating-circle
+       design lived in the page gutter and was easy to miss).
+       Centered to the same width as the row above it. */
+    .photoarray-row-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      align-items: center;
+      width: 7.70in;
+      max-width: 100%;
+      margin: 4px auto 0;
+      min-height: 22px;
+    }
+    .photoarray-add-image {
+      padding: 3px 10px;
+      border: 1px solid var(--navy);
+      background: white;
+      color: var(--navy);
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    .photoarray-add-image:hover {
+      background: var(--navy);
+      color: white;
+    }
+    .photoarray-row-delete {
+      padding: 3px 10px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    .photoarray-row-delete:hover {
+      border-color: var(--color-ember);
+      color: var(--color-ember);
+    }
+    /* Add-row button (no-print) */
+    .photoarray-add-row {
+      align-self: flex-start;
+      margin-top: 2px;
+      padding: 4px 12px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .photoarray-add-row:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+
+    /* ---------- Plain text box block ---------- */
+    .textbox-block {
+      background: white;
+      border: 1px solid var(--steel);
+      border-radius: 3px;
+      padding: 6px 10px;
+      position: relative;
+      min-height: 0.50in;
+    }
+    .textbox-text {
+      outline: none;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--charcoal);
+      cursor: text;
+      min-height: 18px;
+    }
+    .textbox-text:focus { background: rgba(232, 235, 240, 0.4); border-radius: 2px; }
+    .textbox-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    /* ---------- Parts list table block ---------- */
+    .parts-block {
+      background: white;
+      border: 1.5px solid var(--color-cobalt);
+      border-radius: 3px;
+      position: relative;
+      overflow: visible;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .parts-header {
+      background: var(--color-cobalt);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ---------- Optional block title bar ---------- */
+    /* Used by Image|Text (step) and Photo Array blocks. Visually mirrors the
+       Chart block's header so titled blocks read as a family. The bar is
+       conditionally rendered - block.title === undefined means "no bar".
+       Toggled on by the "T" button in block-controls, off by the bar's own
+       \u2715 button. */
+    .block-title-bar {
+      background: var(--color-cobalt);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .block-title-text {
+      flex: 1;
+      outline: none;
+      cursor: text;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    .block-title-text:focus { background: rgba(255,255,255,0.18); border-radius: 2px; }
+    .block-title-text:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(255,255,255,0.65);
+      font-weight: 400;
+      font-style: italic;
+      letter-spacing: normal;
+    }
+    .block-title-remove {
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: white;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      line-height: 1;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .block-title-remove:hover { background: rgba(0,0,0,0.32); }
+    .parts-header-label {
+      flex: 1;
+      outline: none;
+      cursor: text;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    .parts-header-label:focus { background: rgba(255,255,255,0.18); border-radius: 2px; }
+    .parts-header-label:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(255,255,255,0.65);
+      font-weight: 400;
+      font-style: italic;
+      letter-spacing: normal;
+    }
+
+    .parts-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    .parts-table thead th {
+      background: #eef0f3;
+      border: 1px solid var(--steel);
+      padding: 0;
+      text-align: left;
+      vertical-align: middle;
+      position: relative;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .parts-table tbody td {
+      border: 1px solid var(--steel);
+      padding: 0;
+      vertical-align: middle;
+      position: relative;
+    }
+    /* When a body cell is part of a multi-cell drag selection, tint it so
+       the user knows which cells the next format command will apply to. */
+    .parts-table tbody td.parts-cell-selected {
+      background: rgba(78, 114, 160, 0.18);  /* cobalt-derived tint */
+      box-shadow: inset 0 0 0 1px var(--color-cobalt);
+    }
+    .parts-table tbody td.parts-cell-selected .parts-cell {
+      background: transparent;
+    }
+
+    .parts-cell {
+      outline: none;
+      cursor: text;
+      padding: 4px 8px;
+      min-height: 18px;
+      font-size: 10.5px;
+      line-height: 1.3;
+      color: var(--charcoal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .parts-cell:focus {
+      background: var(--frost);
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .parts-cell:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+    }
+    .parts-col-header {
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      color: var(--navy);
+      background: #eef0f3;
+      text-transform: uppercase;
+    }
+
+    /* Column-delete: small ✕ that floats above the column header */
+    .parts-col-delete {
+      visibility: hidden;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--danger);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      z-index: 3;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .parts-table thead th:hover .parts-col-delete {
+      visibility: visible;
+    }
+
+    /* Right gutter column - holds row-delete buttons, hidden in print */
+    .parts-actions-col {
+      width: 22px;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      position: relative;
+    }
+
+    .parts-row-delete {
+      visibility: hidden;
+      position: absolute;
+      top: 50%;
+      left: 3px;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--danger);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+    }
+    .parts-table tbody tr:hover .parts-row-delete {
+      visibility: visible;
+    }
+
+    /* Action footer (Add Row / Add Column) - on-screen only */
+    .parts-actions {
+      padding: 4px 10px;
+      background: #f5f6f8;
+      display: flex;
+      gap: 6px;
+      border-top: 1px solid var(--steel);
+    }
+    .parts-actions button {
+      font-size: 11px;
+      padding: 2px 10px;
+      border: 1px solid var(--steel);
+      background: white;
+      color: var(--charcoal);
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: inherit;
+      font-weight: 600;
+    }
+    .parts-actions button:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+    .parts-paste-hint {
+      font-size: 10px;
+      color: var(--charcoal);
+      opacity: 0.7;
+      font-style: italic;
+      margin-left: auto;
+      align-self: center;
+    }
+
+    /* ---------- Section header block ---------- */
+    .section-header {
+      display: flex;
+      /* Title sits at the TOP of the row. The empty space below acts as a
+         visual section separator before the next block. Bottom-aligning
+         caused the empty space to land above the title - when a section
+         was the first block on a page that gap read as "extra room below
+         the page header" (and was inconsistent with pages whose first
+         block wasn't a section). */
+      align-items: flex-start;
+      background: white;
+      color: var(--navy);
+      padding: 0 2px;
+      position: relative;
+      height: 100%;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .section-header-text {
+      flex: 1;
+      outline: none;
+      cursor: text;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--navy);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+      min-width: 0;
+      line-height: 1.2;
+      /* Underline now lives on the text element so it sits directly under
+         the title rather than at the very bottom of the row. */
+      border-bottom: 2.5px solid var(--navy);
+      padding: 0 0 4px 4px;
+    }
+    .section-header-text:focus { background: var(--frost); border-radius: 2px; }
+    .section-header-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-weight: 400;
+      font-style: italic;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    /* ---------- Step block (horizontal: image left, text right) ---------- */
+    .step {
+      border: 1.5px solid var(--navy);
+      border-radius: 3px;
+      padding: 4px 5px;
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      overflow: visible;            /* allow step-number tab to extend above */
+      position: relative;
+      background: white;
+      height: 2.15in;
+    }
+
+    .step-number {
+      background: var(--navy);
+      color: white;
+      min-width: 22px;
+      height: 18px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+      position: absolute;
+      top: -10px;                   /* stick out above the cell border */
+      left: 4px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      z-index: 2;
+    }
+
+    .step-image {
+      flex: 0 0 3.75in;             /* fixed width per design spec */
+      height: 2.00in;                /* fixed height per design spec */
+      background: var(--frost);
+      border: 1px dashed var(--steel);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+    .step-image:hover { background: #dde4ee; }
+    .step-image.has-image { background: white; border-style: solid; border-color: var(--frost); }
+    .step-image.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
+    .step-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .step-image .placeholder {
+      color: #888;
+      font-size: 10px;
+      text-align: center;
+      padding: 4px;
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    .step-image .clear-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(0,0,0,0.65);
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      display: none;
+      line-height: 1;
+    }
+    .step-image:hover .clear-btn { display: block; }
+
+    /* ---------- Editable rich text (right of image, full remaining width) ---------- */
+    .step-text {
+      flex: 1;                      /* fill remaining width */
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.35;
+      height: 100%;
+      padding: 4px 6px;
+      background: transparent;
+      color: var(--charcoal);
+      overflow: hidden;
+      cursor: text;
+      min-width: 0;                 /* allow flex shrinking past content */
+    }
+    .step-text:focus { background: rgba(232, 235, 240, 0.5); }
+    .step-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
+    }
+    /* When the block has an optional title bar above, the step-number can't
+       stick out above the step (the title bar is there). Tuck it just
+       inside the top-left of the step instead. */
+    .step.has-title .step-number {
+      top: 4px;
+      left: 4px;
+    }
+    .step.has-title {
+      /* Slight extra top padding so the number badge has room. */
+      padding-top: 18px;
+    }
+
+    /* execCommand fontSize emits CSS keyword sizes; map to print-friendly pixels. */
+    .rich-text-editor [style*="font-size: small"]    { font-size: 9px    !important; line-height: 1.25; }
+    .rich-text-editor [style*="font-size: medium"]   { font-size: 10.5px !important; line-height: 1.3;  }
+    .rich-text-editor [style*="font-size: large"]    { font-size: 13px   !important; line-height: 1.35; }
+    .rich-text-editor [style*="font-size: x-large"]  { font-size: 16px   !important; line-height: 1.4;  }
+    .rich-text-editor [style*="font-size: xx-large"] { font-size: 16px   !important; line-height: 1.4;  }
+
+    /* ---------- Inline icon badges (within editable text) ---------- */
+    .wi-icon {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      margin: 0 2px 0 0;
+      white-space: nowrap;
+      vertical-align: baseline;
+      font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .wi-warning { background: var(--danger); color: #ffffff; }
+    .wi-caution { background: var(--amber);  color: #2c1f00; }
+    .wi-inspect { background: var(--info);   color: #ffffff; }
+    .wi-torque  { background: #424242;       color: #ffffff; }
+
+    /* ---------- Callout block (full width) ---------- */
+    .callout {
+      display: flex;
+      align-items: stretch;
+      border: 2px solid var(--callout-color, var(--charcoal));
+      border-radius: 3px;
+      background: white;
+      min-height: 100%;
+      position: relative;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Insert-block palette - dark/medium tones with white text. */
+    .callout-warning  { --callout-color: var(--color-ember);   --callout-text-color: #ffffff; }
+    .callout-caution  { --callout-color: var(--color-gold);    --callout-text-color: #ffffff; }
+    .callout-note     { --callout-color: var(--color-cobalt);  --callout-text-color: #ffffff; }
+    .callout-watch    { --callout-color: var(--color-rust);    --callout-text-color: #ffffff; }
+    .callout-monitor  { --callout-color: var(--color-plum);    --callout-text-color: #ffffff; }
+    .callout-record   { --callout-color: var(--color-pine);    --callout-text-color: #ffffff; }
+    .callout-tools    { --callout-color: var(--color-teal);    --callout-text-color: #ffffff; }
+    .callout-inspect  { --callout-color: var(--color-sky);     --callout-text-color: #ffffff; }
+    .callout-measure  { --callout-color: var(--color-seafoam); --callout-text-color: #ffffff; }
+    .callout-finding  { --callout-color: var(--color-fern);    --callout-text-color: #ffffff; }
+    .callout-concern  { --callout-color: var(--color-rose);    --callout-text-color: #ffffff; }
+    .callout-analysis { --callout-color: var(--color-iris);    --callout-text-color: #ffffff; }
+
+    .callout-badge {
+      background: var(--callout-color);
+      color: var(--callout-text-color);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+      min-width: 0.85in;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .callout-text {
+      flex: 1;
+      padding: 4px 10px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--charcoal);
+      outline: none;
+      cursor: text;
+      /* Multi-line: text wraps and the row grows to fit */
+      overflow-wrap: break-word;
+      word-break: break-word;
+      white-space: normal;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+    .callout-text:focus { background: rgba(232, 235, 240, 0.5); }
+    .callout-text:empty::before {
+      content: attr(data-placeholder);
+      color: var(--steel);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    /* ---------- Block controls (delete / move) ---------- */
+    .block-controls {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      display: flex;
+      gap: 2px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .step:hover > .block-controls,
+    .callout:hover > .block-controls,
+    .section-header:hover > .block-controls,
+    .parts-block:hover > .block-controls,
+    .photoarray-block:hover > .block-controls,
+    .textbox-block:hover > .block-controls {
+      opacity: 1;
+    }
+    .block-controls button {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0;
+      font-family: inherit;
+    }
+    .block-controls button:hover { background: rgba(0, 0, 0, 0.85); }
+    .block-controls button.delete:hover { background: var(--danger); }
+    /* Add-title button tints to the title-bar color on hover so the user can
+       see what's about to appear. */
+    .block-controls button.add-title:hover { background: var(--color-cobalt); }
+
+    /* ---------- Drag and Drop ---------- */
+    .drop-indicator {
+      position: fixed;
+      height: 3px;
+      background: var(--color-cobalt);
+      pointer-events: none;
+      z-index: 600;
+      display: none;
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(78,114,160,0.55);
+    }
+    body.is-dragging .drop-indicator { display: block; }
+    .block-dragging { opacity: 0.35; }
+    .block-drag-handle {
+      cursor: grab !important;
+      font-size: 13px !important;
+      letter-spacing: -1px;
+    }
+    .block-drag-handle:active { cursor: grabbing !important; }
+
+    /* ---------- Color picker popup ---------- */
+    .color-picker-popup {
+      background: white;
+      border: 1px solid var(--steel);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(6, 22px);
+      gap: 4px;
+    }
+    .color-picker-popup .cp-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .color-picker-popup .cp-swatch:hover {
+      border-color: var(--navy);
+      transform: scale(1.12);
+    }
+    .color-picker-popup .cp-row {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px solid var(--frost);
+      margin-top: 2px;
+    }
+    .color-picker-popup .cp-row label {
+      font-size: 10px; color: var(--charcoal); font-weight: 600;
+    }
+    .color-picker-popup .cp-row input[type=color] {
+      width: 30px; height: 22px;
+      border: 1px solid var(--steel); border-radius: 3px;
+      padding: 1px; cursor: pointer;
+    }
+    .color-picker-popup .cp-reset {
+      font-size: 10px; padding: 2px 7px;
+      border: 1px solid var(--steel); background: white;
+      border-radius: 3px; cursor: pointer;
+      font-family: inherit; color: var(--danger);
+      margin-left: auto;
+    }
+    .color-picker-popup .cp-reset:hover { border-color: var(--danger); }
+    .block-controls button.paint-btn { font-size: 11px; }
+    .block-controls button.paint-btn:hover { background: rgba(90,142,144,0.9); }
+
+    /* ---------- Empty state ---------- */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--charcoal);
+      border: 2px dashed var(--steel);
+      border-radius: 4px;
+      padding: 30px;
+    }
+    .empty-state-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.3px;
+    }
+    .empty-state-body {
+      font-size: 13px;
+      color: var(--charcoal);
+      opacity: 0.8;
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.4;
+    }
+    .empty-state-body strong { color: var(--navy); }
+
+    /* ---------- Footer ---------- */
+    .page-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: var(--charcoal);
+      padding-top: 5px;
+      border-top: 1px solid var(--frost);
+      margin-top: 6px;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .page-footer-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .page-footer-pageno {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: fixed;
+      top: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 4px;
+      z-index: 1000;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ---------- Mobile / narrow-screen layout ---------- */
+    @media screen and (max-width: 900px) {
+      body {
+        /* No fixed-sidebar offset on small screens; sidebar overlays the page when opened. */
+        padding-left: 0;
+        padding-top: calc(52px + env(safe-area-inset-top, 0px));
+        /* Allow horizontal scroll for the letter-sized page if user zooms out. */
+        overflow-x: auto;
+      }
+
+      .topbar {
+        height: calc(52px + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0)
+                 max(8px, env(safe-area-inset-right, 0))
+                 0
+                 max(8px, env(safe-area-inset-left, 0));
+        gap: 5px;
+        overflow-x: auto;
+      }
+      .topbar h1 {
+        font-size: 13px;
+        margin: 0 4px 0 0;
+        white-space: nowrap;
+      }
+      .topbar button {
+        padding: 9px 10px;
+        font-size: 12px;
+        flex-shrink: 0;
+        min-height: 36px;
+        white-space: nowrap;
+      }
+      .topbar .hint { display: none; }
+      .topbar .spacer { flex: 1; }
+
+      /* Sidebar already overlays content on all screen sizes; only the
+         sidebar top offset needs to track the taller mobile topbar. */
+      .sidebar,
+      .sidebar-backdrop {
+        top: calc(52px + env(safe-area-inset-top, 0px));
+      }
+
+      /* Bigger tap targets in sidebar */
+      .sidebar-block-list button {
+        padding: 11px 12px;
+        font-size: 13px;
+        min-height: 44px;
+      }
+      .sidebar-fmt-row button { min-height: 36px; }
+      .sidebar-icon-grid button { min-height: 38px; }
+      .sidebar-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+      }
+
+      /* Scale the letter-size page down to fit the viewport */
+      .pages-container {
+        padding: 12px 0 30px;
+        gap: 14px;
+      }
+      .page {
+        /* Use CSS transform to keep the print layout intact while shrinking visually. */
+        transform: scale(var(--page-scale, 1));
+        transform-origin: top center;
+        margin-bottom: var(--page-margin-fix, 0px);
+      }
+
+      /* Step number badge needs a bit more bottom margin since it sits above */
+      .row-step:first-child { margin-top: 6px; }
+
+      /* Touch target hint for hover-only controls */
+      .step-image .clear-btn,
+      .parts-row-delete,
+      .parts-col-delete,
+      .photoarray-cell .clear-btn,
+      .photoarray-row-delete {
+        visibility: visible;
+      }
+      /* Photo array: clear-btn is display:none by default; on mobile always show */
+      .photoarray-cell .clear-btn { display: block; }
+      /* Permanently show block controls on mobile (touch can't hover) */
+      .block-controls { opacity: 1; }
+      .block-controls button {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+      }
+    }
+
+    @media screen and (max-width: 600px) {
+      .topbar h1 { display: none; }
+      .topbar button { padding: 8px 10px; font-size: 12px; }
+      .topbar .btn-label-full { display: none; }
+      .topbar .btn-label-short { display: inline; }
+    }
+
+    /* ---------- Print rules ---------- */
+    @page {
+      size: letter;
+      margin: 0;
+    }
+
+    @media print {
+      html, body {
+        background: white;
+        margin: 0;
+        padding: 0 !important;
+      }
+      .topbar, .sidebar, .sidebar-backdrop, .no-print, .block-controls { display: none !important; }
+      .step-image .clear-btn, .logo-area .clear-btn,
+      .photoarray-cell .clear-btn, .photoarray-row-delete,
+      .photoarray-add-row, .photoarray-add-image { display: none !important; }
+      /* Photo array: hide empty cell placeholder text in print, and drop the
+         dashed border on cells that don't have an image. */
+      .photoarray-cell:not(.has-image) .placeholder { display: none; }
+      .photoarray-cell:not(.has-image) {
+        background: white;
+        border: 1px solid #bbb;
+      }
+      .pages-container { padding: 0; gap: 0; }
+      .page {
+        box-shadow: none;
+        margin: 0 !important;
+        /* In print we DO want to clip to page bounds so no-print stragglers
+           and any overflow stays out of the printed sheet. (Base CSS keeps
+           overflow visible on screen so action strips remain accessible.) */
+        overflow: hidden;
+        /* Defensive: undo any mobile transform/margin that might leak into
+           print (Safari iOS especially) so the page renders at full 8.5x11
+           and doesn't leave blank space below it. */
+        transform: none !important;
+        margin-bottom: 0 !important;
+        page-break-after: always;
+        break-after: page;
+        /* Prefer to keep an entire .page on a single physical page. */
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+      }
+      /* Empty pages only: collapse to content size. Fixed 11in works on
+         desktop where the browser respects @page margin: 0, but mobile
+         Safari/Chrome reserve ~1in for their own print headers/footers
+         regardless of CSS, so an 11in EMPTY page would overflow into a
+         phantom physical page 2. Pages with content keep the fixed 11in
+         height so their footer stays pinned to the bottom of the page on
+         every device. (On mobile, very-content-heavy pages can still
+         overflow if the user has browser print headers/footers enabled;
+         that's a browser-level setting, not something CSS can override.) */
+      .page.is-empty {
+        height: auto !important;
+        min-height: 0 !important;
+      }
+      .page:last-child { page-break-after: auto; break-after: auto; }
+      .step-image:not(.has-image) {
+        background: white;
+        border: 1px solid #bbb;
+      }
+      .step-image:not(.has-image) .placeholder { display: none; }
+      .logo-area:not(.has-image) { border: none; }
+      .logo-area:not(.has-image) .placeholder { display: none; }
+      .title-field::placeholder,
+      .meta-field input::placeholder,
+      .photoarray-caption::placeholder { color: transparent !important; }
+      /* Photo caption: keep the text, drop the editor chrome. */
+      .photoarray-caption {
+        border-top: 1px solid #ddd;
+        background: transparent;
+      }
+      /* When a caption has no value, hide the input entirely so the image
+         area expands to fill the full cell height. This also dodges the iOS
+         Safari quirk where `::placeholder { color: transparent }` is
+         sometimes ignored, leaving the literal word "Caption" on the page. */
+      .photoarray-caption:placeholder-shown { display: none; }
+      .step-text:empty::before,
+      .callout-text:empty::before,
+      .textbox-text:empty::before,
+      .section-header-text:empty::before { content: ''; }
+      .step-text:focus, .callout-text:focus, .textbox-text:focus { background: transparent; }
+      /* Textbox: drop visible border in print so it reads as plain text */
+      .textbox-block { border-color: transparent !important; padding: 0 !important; }
+      .empty-state { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar no-print">
+  <button class="hamburger-btn" id="hamburgerBtn" type="button" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="true" title="Open menu">
+    <span class="hamburger-icon" aria-hidden="true"><span></span></span>
+  </button>
+  <h1>Work Instruction Builder</h1>
+  <span class="spacer"></span>
+  <button class="primary" onclick="window.print()">
+    <span class="btn-label-full">Print / Save PDF</span>
+    <span class="btn-label-short">Print</span>
+  </button>
+  <button onclick="exportTemplate()">
+    <span class="btn-label-full">Save File</span>
+    <span class="btn-label-short">Save</span>
+  </button>
+  <button onclick="importTemplate()">
+    <span class="btn-label-full">Load File</span>
+    <span class="btn-label-short">Load</span>
+  </button>
+  <button onclick="newDocument()">
+    <span class="btn-label-full">Clear All</span>
+    <span class="btn-label-short">Clear</span>
+  </button>
+</header>
+
+<aside class="sidebar no-print" id="sidebar" aria-label="Editing tools">
+  <div class="sidebar-header">
+    <span>Tools</span>
+    <button class="sidebar-toggle" id="sidebarCollapseBtn" type="button" title="Close menu" aria-label="Close menu" aria-controls="sidebar" aria-expanded="true">✕</button>
+  </div>
+
+  <div class="sidebar-section">
+    <h3>Insert Block</h3>
+    <div class="sidebar-block-list">
+      <button class="add-section"    data-add="section"                      type="button" title="Add a section title">+ Section Title</button>
+      <button class="add-step"       data-add="step"                         type="button" title="Add an image and text block">+ Image | Text</button>
+      <button class="add-photoarray" data-add="photoarray"                   type="button" title="Add a photo array (3-column grid of images)">+ Photo Array</button>
+      <button class="add-textbox"    data-add="textbox"                      type="button" title="Add a plain text box">+ Text Box</button>
+      <button class="add-parts"      data-add="parts"                        type="button" title="Add a chart / table">+ Chart</button>
+      <button class="add-finding"    data-add="callout" data-kind="finding"  type="button" title="Add a Finding banner">+ Finding</button>
+      <button class="add-concern"    data-add="callout" data-kind="concern"  type="button" title="Add a Concern banner">+ Concern</button>
+      <button class="add-analysis"   data-add="callout" data-kind="analysis" type="button" title="Add an Analysis banner">+ Analysis</button>
+      <button class="add-warning"    data-add="callout" data-kind="warning"  type="button" title="Add a Warning banner">+ Warning</button>
+      <button class="add-caution"    data-add="callout" data-kind="caution"  type="button" title="Add a Caution banner">+ Caution</button>
+      <button class="add-note"       data-add="callout" data-kind="note"     type="button" title="Add a Note banner">+ Note</button>
+      <button class="add-watch"      data-add="callout" data-kind="watch"    type="button" title="Add a Tip banner">+ Tip</button>
+      <button class="add-monitor"    data-add="callout" data-kind="monitor"  type="button" title="Add a Monitor banner">+ Monitor</button>
+      <button class="add-record"     data-add="callout" data-kind="record"   type="button" title="Add a Record banner">+ Record</button>
+      <button class="add-tools"      data-add="callout" data-kind="tools"    type="button" title="Add a Tools banner">+ Tools</button>
+      <button class="add-inspect"    data-add="callout" data-kind="inspect"  type="button" title="Add an Inspect banner">+ Inspect</button>
+      <button class="add-measure"    data-add="callout" data-kind="measure"  type="button" title="Add a Measure banner">+ Measure</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <h3>Format Text</h3>
+    <div class="sidebar-fmt-row">
+      <button class="fmt-bold" data-cmd="bold" type="button" title="Bold (toggle)">B</button>
+      <span class="label">Size:</span>
+      <button class="size-btn" data-cmd="fontSize" data-arg="2" type="button" title="Small text">S</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="3" type="button" title="Normal text">N</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="4" type="button" title="Medium text">M</button>
+      <button class="size-btn" data-cmd="fontSize" data-arg="5" type="button" title="Large text">L</button>
+    </div>
+    <div class="sidebar-fmt-row">
+      <span class="label">Color:</span>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#595959" style="background:#595959" type="button" title="Charcoal (default)" aria-label="Charcoal"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#b3261e" style="background:#b3261e" type="button" title="Red" aria-label="Red"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#1565c0" style="background:#1565c0" type="button" title="Blue" aria-label="Blue"></button>
+      <button class="color-swatch" data-cmd="foreColor" data-arg="#2e7d32" style="background:#2e7d32" type="button" title="Green" aria-label="Green"></button>
+    </div>
+    <h4>Inline icon badges</h4>
+    <div class="sidebar-icon-grid">
+      <button class="fmt-icon-warning" data-icon="warning" type="button" title="Inline WARNING badge">⚠ WARNING</button>
+      <button class="fmt-icon-caution" data-icon="caution" type="button" title="Inline CAUTION badge">⚠ CAUTION</button>
+      <button class="fmt-icon-inspect" data-icon="inspect" type="button" title="Inline INSPECT badge">◉ INSPECT</button>
+      <button class="fmt-icon-torque"  data-icon="torque"  type="button" title="Inline TORQUE badge">⚙ TORQUE</button>
+    </div>
+    <button class="sidebar-clear-btn" data-cmd="removeFormat" type="button" title="Clear formatting from selection">⌫ Clear formatting</button>
+  </div>
+</aside>
+
+<div class="sidebar-backdrop no-print" id="sidebarBackdrop"></div>
+
+<!--
+  Floating format toolbar. Appears when any rich-text editor has focus and
+  hides when focus moves elsewhere. Lives outside the sidebar so the user
+  doesn't have to open the hamburger menu just to bold a word.
+  Buttons share data-cmd / data-icon attributes with the sidebar version,
+  so setupFormatToolbar() picks them up automatically.
+-->
+<div class="floating-fmt-toolbar no-print" id="floatingFormatToolbar" hidden>
+  <button class="fmt-bold" data-cmd="bold" type="button" title="Bold (toggle)">B</button>
+  <span class="floating-fmt-sep"></span>
+  <span class="floating-fmt-label">Size</span>
+  <button class="size-btn" data-cmd="fontSize" data-arg="2" type="button" title="Small">S</button>
+  <button class="size-btn" data-cmd="fontSize" data-arg="3" type="button" title="Normal">N</button>
+  <button class="size-btn" data-cmd="fontSize" data-arg="4" type="button" title="Medium">M</button>
+  <button class="size-btn" data-cmd="fontSize" data-arg="5" type="button" title="Large">L</button>
+  <span class="floating-fmt-sep"></span>
+  <span class="floating-fmt-label">Color</span>
+  <button class="color-swatch" data-cmd="foreColor" data-arg="#595959" style="background:#595959" type="button" title="Charcoal" aria-label="Charcoal"></button>
+  <button class="color-swatch" data-cmd="foreColor" data-arg="#b3261e" style="background:#b3261e" type="button" title="Red" aria-label="Red"></button>
+  <button class="color-swatch" data-cmd="foreColor" data-arg="#1565c0" style="background:#1565c0" type="button" title="Blue" aria-label="Blue"></button>
+  <button class="color-swatch" data-cmd="foreColor" data-arg="#2e7d32" style="background:#2e7d32" type="button" title="Green" aria-label="Green"></button>
+  <span class="floating-fmt-sep"></span>
+  <button class="floating-fmt-clear" data-cmd="removeFormat" type="button" title="Clear formatting from selection">&#x232B;</button>
+</div>
+
+<div id="pagesContainer" class="pages-container"></div>
+<div id="toast" class="toast no-print"></div>
+<div class="drop-indicator no-print" id="dropIndicator"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Storage ----------
+  // v3: blocks-based document model. Older keys are migrated on first load.
+  const STORAGE_KEY = 'workInstructionBuilder_v4';
+  const LEGACY_KEYS = [
+    'workInstructionBuilder_v3',
+    'workInstructionBuilder_v2',
+    'workInstructionBuilder_v1'
+  ];
+
+  // ---------- Pagination constants (inches) ----------
+  // Available content height per page is ~8.98in (11 - 0.7 padding - ~1.07 header
+  // - ~0.25 footer). Use 8.9 as a safety threshold.
+  const PAGE_CONTENT_HEIGHT = 9.20;
+  const STEP_ROW_HEIGHT     = 2.20;
+  const CALLOUT_ROW_HEIGHT  = 0.32;
+  const SECTION_ROW_HEIGHT  = 0.60;
+  const ROW_GAP             = 0.10;
+  // Optional title bar (Image|Text and Photo Array). Bar height equals
+  // its CSS layout (4px top + ~14px text + 4px bottom ≈ 22px ≈ 0.23in).
+  // The pagination math adds this whenever block.title is a string, since
+  // that's when the bar actually renders.
+  const TITLE_BAR_HEIGHT    = 0.23;
+
+  // Parts list table heights:
+  // Brown header bar (~0.30") + column header row (~0.25")
+  // + each data row (~0.22") + action footer (~0.27", visible on screen, hidden in print)
+  const PARTS_BASE_HEIGHT = 0.85;
+  const PARTS_ROW_HEIGHT  = 0.22;
+
+  // ---------- Callout kinds ----------
+  // The `key` is what's stored in saved files. The `label` is what's shown.
+  // Icons are no longer rendered on the badge - left here as data only in
+  // case anyone wants to revive them later.
+  const CALLOUT_KINDS = {
+    warning:   { label: 'WARNING',  icon: '\u26A0' },  // ⚠
+    caution:   { label: 'CAUTION',  icon: '\u26A0' },  // ⚠
+    note:      { label: 'NOTE',     icon: '\u2139' },  // ℹ
+    watch:     { label: 'TIP',      icon: '\u2757' },  // ❗ (key 'watch' kept for back-compat)
+    monitor:   { label: 'MONITOR',  icon: '\u25C9' },  // ◉
+    record:    { label: 'RECORD',   icon: '\u270E' },  // ✎
+    tools:     { label: 'TOOLS',    icon: '\u2692' },  // ⚒
+    inspect:   { label: 'INSPECT',  icon: '\u2315' },  // ⌕
+    measure:   { label: 'MEASURE',  icon: '\u2194' },  // ↔
+    finding:   { label: 'FINDING',  icon: '' },
+    concern:   { label: 'CONCERN',  icon: '' },
+    analysis:  { label: 'ANALYSIS', icon: '' }
+  };
+
+  // ---------- Form type schemas ----------
+  // Each form type has a label (shown in the dropdown), title placeholder
+  // text, and an ordered list of metadata fields. Field keys are stable
+  // identifiers stored in saved files; labels can be changed without
+  // breaking back-compat.
+  const FORM_TYPES = {
+    blank: {
+      label: 'Blank',
+      titlePlaceholder: 'Form Title',
+      fields: []
+    },
+    workInstruction: {
+      label: 'Work Instruction',
+      titlePlaceholder: 'Work Instruction Title (e.g., Turbocharger Cartridge Assembly)',
+      fields: [
+        { key: 'partNumber', label: 'Part #',    width: 110 },
+        { key: 'operation',  label: 'Operation', width: 130 },
+        { key: 'rev',        label: 'Rev',       width: 50  },
+        { key: 'date',       label: 'Date',      width: 90  }
+      ]
+    },
+    sampleProductAnalysis: {
+      label: 'Sample Product Analysis',
+      titlePlaceholder: 'Sample Product Analysis Title',
+      fields: [
+        { key: 'vendor',           label: 'Vendor',           width: 120 },
+        { key: 'vendorPartNumber', label: 'Vendor Part #',    width: 110 },
+        { key: 'pdiPartNumber',    label: 'PDI Part #',       width: 110 },
+        { key: 'partDescription',  label: 'Part Description', width: 180 },
+        { key: 'date',             label: 'Date',             width: 90  }
+      ]
+    },
+    incomingQuality: {
+      label: 'Incoming Quality Inspection',
+      titlePlaceholder: 'Incoming Quality Inspection Title',
+      fields: [
+        { key: 'vendor',          label: 'Vendor',          width: 110 },
+        { key: 'inspectionDate',  label: 'Inspection Date', width: 95  },
+        { key: 'inspector',       label: 'Inspector',       width: 110 },
+        { key: 'pdiPoNumber',     label: 'PDI PO #',        width: 100 },
+        { key: 'lotNumber',       label: 'Lot #',           width: 90  },
+        { key: 'pdiPartNumber',   label: 'PDI Part #',      width: 100 },
+        { key: 'partDescription', label: 'Part Description', width: 150 },
+        { key: 'sampleQty',       label: 'Sample Qty',      width: 70  }
+      ]
+    },
+    warranty: {
+      label: 'Warranty Analysis',
+      titlePlaceholder: 'Warranty Analysis Title',
+      fields: [
+        { key: 'customerName',      label: 'Customer Name',      width: 140 },
+        { key: 'partNumber',        label: 'Part #',             width: 100 },
+        { key: 'quantity',          label: 'Qty',                width: 60  },
+        { key: 'installDate',       label: 'Install Date',       width: 90  },
+        { key: 'failDate',          label: 'Fail Date',          width: 90  },
+        { key: 'customerComplaint', label: 'Customer Complaint', width: 180 }
+      ]
+    }
+  };
+
+  function getFormSchema(formType) {
+    return FORM_TYPES[formType] || FORM_TYPES.blank;
+  }
+  // _idCounter must be declared before state is constructed because
+  // createEmptyState() -> createDefaultBlocks() -> genId() reads it.
+  let _idCounter = 0;
+  let state = createEmptyState();
+  let lastFocusedEditable = null;
+  let lastFocusedBlockId = null;
+  let focusBlockIdAfterRender = null;
+  // Transient UI state: which photo array rows are currently showing an
+  // "extra" placeholder cell that the user requested via "+ Add Photo".
+  // Key: blockId + '__' + rowIdx, value: number of pending placeholders.
+  // Never persisted - only valid for this in-memory session, and reset on
+  // the user uploading to the placeholder, deleting the row, or refreshing.
+  const pendingPhotoSlot = new Map();
+
+  // Transient UI state for the Chart (parts) block's drag-to-select multi-cell
+  // gesture. Selected cells are highlighted; when a format-toolbar button is
+  // clicked while a selection is non-empty, the format applies to every
+  // selected cell instead of only the single focused cell.
+  //   partsCellSelection: Map<blockId, Set<"rowIdx-colIdx">>
+  //   partsDrag: drag-in-progress state; null when idle.
+  const partsCellSelection = new Map();
+  let partsDrag = null;
+
+  // Drag-and-drop state
+  let _dragData = null;
+  let _dragInsertIdx = -1;
+  let _lastMousedownEl = null;
+
+  function genId() {
+    _idCounter += 1;
+    return 'b_' + Date.now().toString(36) + '_' + _idCounter.toString(36);
+  }
+
+  function createStepBlock(img, text) {
+    return {
+      id: genId(),
+      type: 'step',
+      img: img == null ? null : img,
+      text: text == null ? '' : text
+    };
+  }
+
+  function createCalloutBlock(kind, text) {
+    return {
+      id: genId(),
+      type: 'callout',
+      kind: CALLOUT_KINDS[kind] ? kind : 'note',
+      text: text == null ? '' : text
+    };
+  }
+
+  function createSectionBlock(text) {
+    return {
+      id: genId(),
+      type: 'section',
+      text: text == null ? '' : text
+    };
+  }
+
+  function createPartsBlock(columns, rows, title) {
+    const cols = Array.isArray(columns) && columns.length > 0
+      ? columns.slice()
+      : ['Part Number', 'Description', 'Quantity'];
+    let rs;
+    if (Array.isArray(rows) && rows.length > 0) {
+      rs = rows.map(r => {
+        const out = Array(cols.length).fill('');
+        if (Array.isArray(r)) {
+          for (let i = 0; i < Math.min(r.length, cols.length); i++) {
+            out[i] = typeof r[i] === 'string' ? r[i] : '';
+          }
+        }
+        return out;
+      });
+    } else {
+      rs = [Array(cols.length).fill('')];
+    }
+    return {
+      id: genId(),
+      type: 'parts',
+      title: typeof title === 'string' ? title : '',
+      columns: cols,
+      rows: rs
+    };
+  }
+
+  function createPhotoArrayBlock(rows) {
+    // rows is an array of row arrays; each row array holds 3 entries (cells).
+    // Each entry is either null or { src: dataUrl, caption: string }.
+    // Older callers may still pass plain string data URLs; we coerce those
+    // to the object form here so the rest of the code only deals with one
+    // shape.
+    function coerceCell(c) {
+      if (!c) return null;
+      if (typeof c === 'string') return { src: c, caption: '' };
+      if (typeof c === 'object' && typeof c.src === 'string' && c.src) {
+        return { src: c.src, caption: typeof c.caption === 'string' ? c.caption : '' };
+      }
+      return null;
+    }
+    let rs;
+    if (Array.isArray(rows) && rows.length > 0) {
+      rs = rows.map(r => {
+        const out = [null, null, null];
+        if (Array.isArray(r)) {
+          out[0] = coerceCell(r[0]);
+          out[1] = coerceCell(r[1]);
+          out[2] = coerceCell(r[2]);
+        }
+        return out;
+      });
+    } else {
+      rs = [[null, null, null]];
+    }
+    return {
+      id: genId(),
+      type: 'photoarray',
+      rows: rs
+    };
+  }
+
+  function createTextBoxBlock(text) {
+    return {
+      id: genId(),
+      type: 'textbox',
+      text: text == null ? '' : text
+    };
+  }
+
+  function createEmptyState() {
+    return {
+      logo: null,
+      title: '',
+      formType: 'blank',
+      metaFields: {},
+      blocks: []
+    };
+  }
+
+  // ---------- Migration ----------
+  // Older saves stored partNumber/operation/rev/date as top-level fields.
+  // Newer schema moves those into state.metaFields and adds a formType.
+  function migrateLegacyState(old) {
+    if (!old || typeof old !== 'object') return null;
+
+    // Helper: pull legacy top-level keys into a metaFields object.
+    function legacyMeta() {
+      const m = {};
+      ['partNumber', 'operation', 'rev', 'date'].forEach(k => {
+        if (typeof old[k] === 'string' && old[k]) m[k] = old[k];
+      });
+      return m;
+    }
+
+    // Decide formType: if any legacy WI fields are populated, assume the
+    // file is a work instruction; otherwise default to blank.
+    function decideFormType(meta) {
+      if (typeof old.formType === 'string' && FORM_TYPES[old.formType]) {
+        return old.formType;
+      }
+      const hasWiData = ['partNumber', 'operation', 'rev', 'date']
+        .some(k => meta[k] && meta[k].trim());
+      return hasWiData ? 'workInstruction' : 'blank';
+    }
+
+    // v3+ (blocks array exists). Filter empty placeholder steps.
+    if (Array.isArray(old.blocks)) {
+      const blocks = old.blocks.filter(b => {
+        if (!b) return false;
+        if (b.type !== 'step' && b.type !== 'callout' && b.type !== 'section' && b.type !== 'parts' && b.type !== 'photoarray' && b.type !== 'textbox') return false;
+        if (b.type === 'callout') return true;
+        if (b.type === 'parts') return true;
+        if (b.type === 'photoarray') return true;
+        if (b.type === 'textbox') return true;
+        if (b.type === 'section') {
+          const hasText = typeof b.text === 'string' && b.text.replace(/<[^>]*>/g, '').trim().length > 0;
+          return hasText;
+        }
+        // step
+        const hasImg = !!b.img;
+        const hasText = typeof b.text === 'string' && b.text.replace(/<[^>]*>/g, '').trim().length > 0;
+        return hasImg || hasText;
+      });
+
+      // metaFields: prefer the new format if present, otherwise migrate legacy keys.
+      let meta;
+      if (old.metaFields && typeof old.metaFields === 'object') {
+        meta = {};
+        Object.keys(old.metaFields).forEach(k => {
+          const v = old.metaFields[k];
+          if (typeof v === 'string') meta[k] = v;
+        });
+      } else {
+        meta = legacyMeta();
+      }
+
+      return {
+        logo: old.logo || null,
+        title: old.title || '',
+        formType: decideFormType(meta),
+        metaFields: meta,
+        blocks: blocks
+      };
+    }
+
+    // v1/v2 had pages of steps
+    if (Array.isArray(old.pages)) {
+      const blocks = [];
+      for (const page of old.pages) {
+        if (!page || !Array.isArray(page.steps)) continue;
+        for (const step of page.steps) {
+          if (!step) continue;
+          const hasImg = !!step.img;
+          const hasText = typeof step.text === 'string' && step.text.trim().length > 0;
+          if (hasImg || hasText) {
+            blocks.push(createStepBlock(step.img || null, step.text || ''));
+          }
+        }
+      }
+      const meta = legacyMeta();
+      return {
+        logo: old.logo || null,
+        title: old.title || '',
+        formType: decideFormType(meta),
+        metaFields: meta,
+        blocks: blocks
+      };
+    }
+    return null;
+  }
+
+  function normalizeState(s) {
+    if (!s || typeof s !== 'object') return createEmptyState();
+    if (typeof s.logo === 'undefined') s.logo = null;
+    if (typeof s.title !== 'string') s.title = '';
+
+    // Form type: validate against the schema list
+    if (typeof s.formType !== 'string' || !FORM_TYPES[s.formType]) {
+      // Try to infer from legacy top-level keys (in case migration didn't happen)
+      const legacyKeys = ['partNumber', 'operation', 'rev', 'date'];
+      const hasWi = legacyKeys.some(k => typeof s[k] === 'string' && s[k]);
+      s.formType = hasWi ? 'workInstruction' : 'blank';
+    }
+
+    // Meta fields: ensure object, migrate any legacy top-level WI keys.
+    if (!s.metaFields || typeof s.metaFields !== 'object') {
+      s.metaFields = {};
+    }
+    ['partNumber', 'operation', 'rev', 'date'].forEach(k => {
+      if (typeof s[k] === 'string' && s[k] && !s.metaFields[k]) {
+        s.metaFields[k] = s[k];
+      }
+      delete s[k];
+    });
+    // Coerce non-string meta values
+    Object.keys(s.metaFields).forEach(k => {
+      if (typeof s.metaFields[k] !== 'string') s.metaFields[k] = '';
+    });
+
+    if (!Array.isArray(s.blocks)) s.blocks = [];
+
+    // In-place upgrade: previous versions stored Parts List as a callout.
+    // Convert any { type: 'callout', kind: 'parts' } into a structured parts table.
+    s.blocks = s.blocks.map(b => {
+      if (b && b.type === 'callout' && b.kind === 'parts') {
+        const text = (typeof b.text === 'string' ? b.text : '').replace(/<[^>]*>/g, '').trim();
+        return {
+          id: b.id || genId(),
+          type: 'parts',
+          columns: ['Part Number', 'Description', 'Quantity'],
+          rows: text ? [['', text, '']] : [['', '', '']]
+        };
+      }
+      return b;
+    });
+
+    s.blocks = s.blocks.filter(b => b && (
+      b.type === 'step' ||
+      b.type === 'callout' ||
+      b.type === 'section' ||
+      b.type === 'parts' ||
+      b.type === 'photoarray' ||
+      b.type === 'textbox'
+    ));
+    s.blocks.forEach(b => {
+      if (!b.id) b.id = genId();
+      // precedingSpacers: integer count of "spacer" rows to render above this
+      // block. Each spacer occupies one block-height of vertical space and
+      // is added/removed by the down/up arrows on the last block (a way to
+      // push a block lower on the page in block-height increments). Spacers
+      // can spill onto a previous/next page just like real rows.
+      if (typeof b.precedingSpacers !== 'number' || !isFinite(b.precedingSpacers) || b.precedingSpacers < 0) {
+        b.precedingSpacers = 0;
+      } else {
+        b.precedingSpacers = Math.floor(b.precedingSpacers);
+      }
+      // Back-compat: prior versions used forcePageBreakBefore=true to push a
+      // block onto the next page. Convert that to one spacer (the closest
+      // approximation), then drop the field. If the user wants more space
+      // they can keep clicking down.
+      if (b.forcePageBreakBefore === true && b.precedingSpacers === 0) {
+        b.precedingSpacers = 1;
+      }
+      delete b.forcePageBreakBefore;
+      if (b.type === 'step') {
+        if (typeof b.img === 'undefined') b.img = null;
+        if (typeof b.text !== 'string') b.text = '';
+        // Drop any legacy orientation field; the layout is now fixed at 2.5x2.5.
+        if ('orientation' in b) delete b.orientation;
+        // Optional title bar above the image/text. Undefined = no bar,
+        // string (even '') = bar rendered. Anything else collapses to no bar.
+        if ('title' in b && typeof b.title !== 'string') delete b.title;
+      } else if (b.type === 'callout') {
+        if (!CALLOUT_KINDS[b.kind]) b.kind = 'note';
+        if (typeof b.text !== 'string') b.text = '';
+        if (typeof b.color !== 'string' || !/^#[0-9a-fA-F]{3,8}$/.test(b.color)) {
+          delete b.color;
+        }
+      } else if (b.type === 'section') {
+        if (typeof b.text !== 'string') b.text = '';
+      } else if (b.type === 'parts') {
+        // Title text shown in the parts header bar. Editable. Default to
+        // empty so the placeholder shows; legacy blocks without a title
+        // get coerced to '' here.
+        if (typeof b.title !== 'string') b.title = '';
+        // Defaults
+        if (!Array.isArray(b.columns) || b.columns.length === 0) {
+          b.columns = ['Part Number', 'Description', 'Quantity'];
+        }
+        b.columns = b.columns.map(c => typeof c === 'string' ? c : '');
+        if (!Array.isArray(b.rows)) b.rows = [];
+        // Normalize each row to match the columns length
+        b.rows = b.rows.map(r => {
+          const out = Array(b.columns.length).fill('');
+          if (Array.isArray(r)) {
+            for (let i = 0; i < Math.min(r.length, b.columns.length); i++) {
+              out[i] = typeof r[i] === 'string' ? r[i] : '';
+            }
+          }
+          return out;
+        });
+        if (b.rows.length === 0) {
+          b.rows = [Array(b.columns.length).fill('')];
+        }
+      } else if (b.type === 'photoarray') {
+        if (!Array.isArray(b.rows)) b.rows = [];
+        b.rows = b.rows.map(r => {
+          // Pull populated entries (in their original slot order), normalize
+          // each to the {src, caption} object form, then pad with nulls.
+          // Result: left-compacted [a, b, null] / [a, null, null] / [a, b, c]
+          // / [null, null, null]. The display layer relies on this invariant
+          // to determine how many cells to render.
+          const populated = [];
+          if (Array.isArray(r)) {
+            for (let i = 0; i < Math.min(r.length, 3); i++) {
+              const c = r[i];
+              if (typeof c === 'string' && c) {
+                // Legacy: bare data URL
+                populated.push({ src: c, caption: '' });
+              } else if (c && typeof c === 'object' && typeof c.src === 'string' && c.src) {
+                populated.push({
+                  src: c.src,
+                  caption: typeof c.caption === 'string' ? c.caption : ''
+                });
+              }
+            }
+          }
+          while (populated.length < 3) populated.push(null);
+          return populated;
+        });
+        if (b.rows.length === 0) {
+          b.rows = [[null, null, null]];
+        }
+        if ('orientation' in b) delete b.orientation;
+        // Optional title bar above the photo grid. Undefined = no bar,
+        // string = bar rendered with that text. See step branch above.
+        if ('title' in b && typeof b.title !== 'string') delete b.title;
+      } else if (b.type === 'textbox') {
+        if (typeof b.text !== 'string') b.text = '';
+      }
+    });
+    return s;
+  }
+
+  // ---------- Persistence ----------
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      // Quota likely exceeded with many large images. Don't block work —
+      // user can still save to file.
+      console.warn('Auto-save skipped (storage limit). Use "Save File" to keep your work.', e);
+    }
+  }
+
+  function loadState() {
+    // Try the current schema key first
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && Array.isArray(parsed.blocks)) {
+          // Detect if normalization will rewrite the shape (legacy top-level
+          // fields, missing formType, non-compact photoarray rows) so we can
+          // persist the cleaned-up version on load instead of waiting for the
+          // next user action.
+          const hasNonCompactPhotoarray = parsed.blocks.some(b => {
+            if (!b || b.type !== 'photoarray' || !Array.isArray(b.rows)) return false;
+            // A row is non-compact if a populated cell appears AFTER an empty
+            // one. The simplest check: any null that has a populated cell to
+            // its right.
+            return b.rows.some(r => {
+              if (!Array.isArray(r)) return true; // any malformed row triggers rewrite
+              for (let i = 0; i < r.length - 1; i++) {
+                if (!r[i] && r.slice(i + 1).some(x => !!x)) return true;
+              }
+              return false;
+            });
+          });
+          const hasLegacyStringPhoto = parsed.blocks.some(b => {
+            if (!b || b.type !== 'photoarray' || !Array.isArray(b.rows)) return false;
+            return b.rows.some(r => Array.isArray(r) && r.some(c => typeof c === 'string'));
+          });
+          // Legacy field from a prior version: forcePageBreakBefore is now
+          // migrated into precedingSpacers. Detecting it here ensures the
+          // migrated shape gets persisted back so we don't redo the work
+          // on every load.
+          const hasLegacyPageBreak = parsed.blocks.some(b => b && 'forcePageBreakBefore' in b);
+          const needsRewrite =
+            !parsed.metaFields ||
+            typeof parsed.formType !== 'string' ||
+            'partNumber' in parsed ||
+            'operation'  in parsed ||
+            'rev'        in parsed ||
+            'date'       in parsed ||
+            hasNonCompactPhotoarray ||
+            hasLegacyStringPhoto ||
+            hasLegacyPageBreak;
+          state = normalizeState(parsed);
+          if (needsRewrite) saveState();
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load saved state:', e);
+    }
+    // Fall back to legacy keys
+    for (const key of LEGACY_KEYS) {
+      try {
+        const data = localStorage.getItem(key);
+        if (!data) continue;
+        const parsed = JSON.parse(data);
+        const migrated = migrateLegacyState(parsed);
+        if (migrated) {
+          state = normalizeState(migrated);
+          saveState(); // Persist under current key
+          return true;
+        }
+      } catch (e) {
+        console.warn('Could not migrate legacy state from', key, e);
+      }
+    }
+    return false;
+  }
+
+  // ---------- Image processing ----------
+  // For JPEG output, fill the canvas white first so transparent source pixels
+  // (e.g. PNGs with the background removed) don't go black on re-encode.
+  function processImage(file, opts) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type || !file.type.startsWith('image/')) {
+        reject(new Error('Selected file is not an image.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Failed to decode image.'));
+        img.onload = () => {
+          try {
+            const maxW = opts.maxWidth;
+            const maxH = opts.maxHeight;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            if (w > maxW || h > maxH) {
+              const ratio = Math.min(maxW / w, maxH / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            if (opts.mimeType === 'image/jpeg') {
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, w, h);
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL(opts.mimeType, opts.quality));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadLogoFile(file) {
+    return processImage(file, {
+      maxWidth: 800, maxHeight: 400, mimeType: 'image/png', quality: 1.0
+    });
+  }
+
+  function loadStepImageFile(file) {
+    return processImage(file, {
+      maxWidth: 1600, maxHeight: 1600, mimeType: 'image/jpeg', quality: 0.85
+    });
+  }
+
+  function pickFile(accept) {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept || 'image/*';
+      input.onchange = () => {
+        resolve(input.files && input.files[0] ? input.files[0] : null);
+      };
+      input.click();
+    });
+  }
+
+  // ---------- Block helpers ----------
+  function findBlockById(id) {
+    return state.blocks.find(b => b.id === id) || null;
+  }
+
+  function findBlockIndex(id) {
+    return state.blocks.findIndex(b => b.id === id);
+  }
+
+  // ---------- Folding blocks into rows ----------
+  // Steps pair greedily into 2-up rows; callouts always force a row break
+  // and take their own full-width row.
+  // The "spacer" is a unit of vertical empty space that the user can stack
+  // before a block by clicking the down arrow on the last block. One spacer
+  // = one row-equivalent of the block - so clicking down on a step adds a
+  // step-height of space, clicking down on a callout adds a callout-height
+  // of space, etc. Photo arrays use one photo-row's worth.
+  function estimateSpacerHeight(block) {
+    if (!block) return STEP_ROW_HEIGHT;
+    let h;
+    if (block.type === 'callout')           h = estimateCalloutHeight(block);
+    else if (block.type === 'section')      h = SECTION_ROW_HEIGHT;
+    else if (block.type === 'parts')        h = estimatePartsHeight(block);
+    else if (block.type === 'photoarray')   h = 2.50;
+    else if (block.type === 'textbox')      h = estimateTextBoxHeight(block);
+    else                                    h = STEP_ROW_HEIGHT;
+    // The optional title bar is part of the block's visible height. Including
+    // it here means one down-arrow click moves the block down by exactly its
+    // own rendered height, matching the user's mental model.
+    if ((block.type === 'step' || block.type === 'photoarray')
+        && typeof block.title === 'string') {
+      h += TITLE_BAR_HEIGHT;
+    }
+    return h;
+  }
+
+  function blocksToRows(blocks) {
+    // Each block now occupies its own full-width row. Steps, callouts, and
+    // section headers are structurally identical from a pagination standpoint;
+    // only their height differs (handled in paginate()).
+    //
+    // Photo arrays are special: each interior row is independently
+    // paginatable so a multi-row block can split across pages instead of
+    // forcing the whole block to bump to a new page (which would leave the
+    // previous page mostly empty).
+    //
+    // precedingSpacers prepends N "spacer" rows before the block - that's
+    // how the down-arrow-on-last-block UX leaves block-height-sized empty
+    // gaps on the page.
+    const rows = [];
+    for (const block of blocks) {
+      const sh = estimateSpacerHeight(block);
+      const spacers = Math.max(0, block.precedingSpacers | 0);
+      for (let s = 0; s < spacers; s++) {
+        rows.push({ type: 'spacer', block, height: sh });
+      }
+      if (block.type === 'callout') {
+        rows.push({ type: 'callout', block });
+      } else if (block.type === 'step') {
+        rows.push({ type: 'step', block });
+      } else if (block.type === 'section') {
+        rows.push({ type: 'section', block });
+      } else if (block.type === 'parts') {
+        rows.push({ type: 'parts', block });
+      } else if (block.type === 'photoarray') {
+        const numRows = (Array.isArray(block.rows) && block.rows.length > 0)
+          ? block.rows.length : 1;
+        for (let i = 0; i < numRows; i++) {
+          rows.push({
+            type: 'photoarrayrow',
+            block,
+            rowIdx: i,
+            isFirstInBlock: i === 0,
+            isLastInBlock: i === numRows - 1
+          });
+        }
+      } else if (block.type === 'textbox') {
+        rows.push({ type: 'textbox', block });
+      }
+    }
+    return rows;
+  }
+
+  // ---------- Pagination ----------
+
+  // Estimate how many visual lines a callout's HTML will occupy at the current
+  // text width. We translate explicit <br>/<div>/<p> boundaries to newlines,
+  // strip remaining markup, then estimate wrap on each logical line based on
+  // an approximate character budget. Conservative on the high side so we
+  // don't under-allocate space.
+  function countCalloutLines(html) {
+    if (!html) return 1;
+    const normalized = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(div|p)\s*>/gi, '\n')
+      .replace(/<(div|p)[^>]*>/gi, '');
+    const plain = normalized
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    if (!plain.trim()) return 1;
+
+    // Available text width on the page is roughly:
+    //   page (8.5") - page padding (0.6") - badge (~0.85") - text padding (~0.2")
+    //   ≈ 6.85" ≈ 657px. At 11px font with mixed casing avg ~5.8px/char, ~113
+    // chars/line. Round down for safety.
+    const CHARS_PER_LINE = 100;
+
+    let totalLines = 0;
+    for (const line of plain.split('\n')) {
+      if (line.length === 0) {
+        totalLines += 1;
+      } else {
+        totalLines += Math.max(1, Math.ceil(line.length / CHARS_PER_LINE));
+      }
+    }
+    return Math.max(1, totalLines);
+  }
+
+  function estimateCalloutHeight(block) {
+    const lines = countCalloutLines(block.text || '');
+    if (lines <= 1) return CALLOUT_ROW_HEIGHT;
+    // Each additional wrapped line at 11px / line-height 1.35 ≈ 14.85px ≈ 0.155in.
+    // Add a touch of slop for safety.
+    const ADDITIONAL_LINE = 0.16;
+    return CALLOUT_ROW_HEIGHT + (lines - 1) * ADDITIONAL_LINE;
+  }
+
+  function estimatePartsHeight(block) {
+    const rows = (block && Array.isArray(block.rows)) ? block.rows.length : 1;
+    return PARTS_BASE_HEIGHT + Math.max(1, rows) * PARTS_ROW_HEIGHT;
+  }
+
+  // Photo array: each row holds three 2.50in square cells, separated by 0.10in gaps.
+  function estimatePhotoArrayHeight(block) {
+    const rows = (block && Array.isArray(block.rows)) ? Math.max(1, block.rows.length) : 1;
+    const PHOTOROW = 2.50;
+    const PHOTOGAP = 0.10;
+    return rows * PHOTOROW + (rows - 1) * PHOTOGAP;
+  }
+
+  // Text box: estimate by line count (10–11px text wraps at ~110 chars/line in
+  // a full-width row). Conservative on the high side.
+  function estimateTextBoxHeight(block) {
+    if (!block || typeof block.text !== 'string' || !block.text.trim()) {
+      return 0.50;
+    }
+    const plain = block.text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(div|p)\s*>/gi, '\n')
+      .replace(/<(div|p)[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+    const CHARS_PER_LINE = 110;
+    let lines = 0;
+    for (const line of plain.split('\n')) {
+      lines += line.length === 0 ? 1 : Math.ceil(line.length / CHARS_PER_LINE);
+    }
+    lines = Math.max(1, lines);
+    // 11px font / 1.4 line-height = ~15.4px ≈ 0.16in per line; plus 0.18in padding/border.
+    return 0.18 + lines * 0.16;
+  }
+
+  function paginate(rows) {
+    const pages = [];
+    let cur = [];
+    let h = 0;
+    for (const row of rows) {
+      let rh;
+      if (row.type === 'spacer') {
+        rh = row.height;
+      } else if (row.type === 'callout') {
+        rh = estimateCalloutHeight(row.block);
+      } else if (row.type === 'section') {
+        rh = SECTION_ROW_HEIGHT;
+      } else if (row.type === 'parts') {
+        rh = estimatePartsHeight(row.block);
+      } else if (row.type === 'photoarrayrow') {
+        // Single photo-array row. ROW_GAP added by paginate covers the
+        // 0.10in gap between consecutive rows of the same block (matching
+        // the original full-block estimate of N*2.50 + (N-1)*0.10).
+        rh = 2.50;
+        // Title bar appears once per block on its FIRST row only.
+        if (row.isFirstInBlock && typeof row.block.title === 'string') {
+          rh += TITLE_BAR_HEIGHT;
+        }
+      } else if (row.type === 'textbox') {
+        rh = estimateTextBoxHeight(row.block);
+      } else {
+        // step
+        rh = STEP_ROW_HEIGHT;
+        if (typeof row.block.title === 'string') {
+          rh += TITLE_BAR_HEIGHT;
+        }
+      }
+      const needed = (cur.length > 0 ? ROW_GAP : 0) + rh;
+      if (h + needed > PAGE_CONTENT_HEIGHT && cur.length > 0) {
+        pages.push(cur);
+        cur = [];
+        h = 0;
+      }
+      const addH = (cur.length > 0 ? ROW_GAP : 0) + rh;
+      cur.push(row);
+      h += addH;
+    }
+    if (cur.length > 0) pages.push(cur);
+    return pages;
+  }
+
+  // ---------- Render ----------
+  function render() {
+    // Assign global step numbers based on order in the document
+    let n = 0;
+    state.blocks.forEach(b => {
+      if (b.type === 'step') {
+        n += 1;
+        b._number = n;
+      }
+    });
+
+    const rows = blocksToRows(state.blocks);
+    let pages = paginate(rows);
+    if (pages.length === 0) pages = [[]];
+
+    const container = document.getElementById('pagesContainer');
+    container.innerHTML = '';
+    pages.forEach((pageRows, pageIdx) => {
+      container.appendChild(buildPageElement(pageRows, pageIdx, pages.length));
+    });
+
+    // Restore focus to a freshly-inserted/moved block, if any.
+    if (focusBlockIdAfterRender) {
+      const block = findBlockById(focusBlockIdAfterRender);
+      const el = document.querySelector('[data-block-id="' + focusBlockIdAfterRender + '"]');
+      if (el && block) {
+        let target = null;
+        // Pick the right entry point per block type.
+        if (block.type === 'parts') {
+          // Skip column headers; land in the first body data cell.
+          target = el.querySelector('tbody .parts-cell');
+        } else if (block.type === 'photoarray') {
+          // No editable text; focus the first photo cell so the user can
+          // press Enter / Space (or just see where to click) to upload.
+          target = el.querySelector('.photoarray-cell');
+        } else {
+          // step / callout / section / textbox: focus the first rich-text editor
+          target = el.querySelector('.rich-text-editor');
+        }
+        if (target) {
+          target.focus();
+          // For contenteditable targets, place the caret at the end so the
+          // user can start typing immediately.
+          if (target.contentEditable === 'true' || target.isContentEditable) {
+            try {
+              const range = document.createRange();
+              range.selectNodeContents(target);
+              range.collapse(false);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            } catch (e) {
+              // Selection APIs can fail in obscure cases; not critical.
+            }
+          }
+          // Scroll the new block into view if it's off-screen.
+          if (typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
+      focusBlockIdAfterRender = null;
+    }
+  }
+
+  function buildPageElement(rows, pageIdx, totalPages) {
+    const pageEl = document.createElement('div');
+    pageEl.className = 'page';
+    // Tag pages with no content rows. Print CSS uses this to collapse the
+    // page to its content size (header + footer only), avoiding a phantom
+    // blank physical page on mobile - while leaving full-height behaviour in
+    // place for pages that DO have content, so their footer stays pinned to
+    // the bottom of the printed page.
+    if (rows.length === 0) {
+      pageEl.classList.add('is-empty');
+    }
+
+    pageEl.appendChild(buildHeader());
+
+    const content = document.createElement('div');
+    content.className = 'content-area';
+
+    if (rows.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state no-print';
+      empty.innerHTML =
+        '<div class="empty-state-title">Empty document</div>' +
+        '<div class="empty-state-body">Use the <strong>Insert Block</strong> menu in the sidebar to add steps and callouts.</div>';
+      content.appendChild(empty);
+    } else {
+      // Coalesce consecutive photoarrayrow entries from the same block into a
+      // single chunk. A photo array can split across pages but each page's
+      // chunk is rendered as a single block element (so the user sees one
+      // tidy block, not a separate sub-block per row).
+      const coalesced = [];
+      let i = 0;
+      while (i < rows.length) {
+        const row = rows[i];
+        if (row.type === 'photoarrayrow') {
+          const block = row.block;
+          const rowIndices = [row.rowIdx];
+          let j = i + 1;
+          while (j < rows.length && rows[j].type === 'photoarrayrow' && rows[j].block === block) {
+            rowIndices.push(rows[j].rowIdx);
+            j++;
+          }
+          coalesced.push({
+            type: 'photoarraychunk',
+            block,
+            rowIndices,
+            // Block controls (move/delete) appear on the first chunk of the
+            // block; the "+ Row" affordance appears on the last chunk.
+            isFirstChunk: rowIndices[0] === 0,
+            isLastChunk: rowIndices[rowIndices.length - 1] === (block.rows.length - 1)
+          });
+          i = j;
+        } else {
+          coalesced.push(row);
+          i++;
+        }
+      }
+      coalesced.forEach(row => content.appendChild(buildRowElement(row)));
+    }
+    pageEl.appendChild(content);
+
+    const footer = document.createElement('div');
+    footer.className = 'page-footer';
+    // Build the footer DOM safely: setting innerHTML with raw user data would
+    // be an XSS vector. textContent escapes everything. Title falls back to
+    // a neutral placeholder when blank.
+    const leftSpan = document.createElement('span');
+    leftSpan.className = 'page-footer-title';
+    leftSpan.textContent = (state.title && state.title.trim()) || 'Untitled';
+    const rightSpan = document.createElement('span');
+    rightSpan.className = 'page-footer-pageno';
+    rightSpan.textContent = 'Page ' + (pageIdx + 1) + ' of ' + totalPages;
+    footer.appendChild(leftSpan);
+    footer.appendChild(rightSpan);
+    pageEl.appendChild(footer);
+
+    return pageEl;
+  }
+
+  function buildHeader() {
+    const header = document.createElement('div');
+    header.className = 'header';
+
+    // ----- Logo -----
+    const logo = document.createElement('div');
+    logo.className = 'logo-area' + (state.logo ? ' has-image' : '');
+    logo.title = 'Click or drop an image to set the company logo';
+    logo.addEventListener('click', (e) => {
+      if (e.target.classList && e.target.classList.contains('clear-btn')) return;
+      handleLogoUpload();
+    });
+    attachDropTarget(logo, async (file) => {
+      try {
+        state.logo = await loadLogoFile(file);
+        saveState();
+        render();
+      } catch (err) {
+        alert('Could not load logo: ' + err.message);
+      }
+    });
+
+    if (state.logo) {
+      const img = document.createElement('img');
+      img.src = state.logo;
+      img.alt = 'Company logo';
+      logo.appendChild(img);
+      logo.appendChild(buildClearButton('Remove logo', (e) => {
+        e.stopPropagation();
+        state.logo = null;
+        saveState();
+        render();
+      }));
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload<br>company logo';
+      logo.appendChild(ph);
+    }
+    header.appendChild(logo);
+
+    // ----- Header info -----
+    const info = document.createElement('div');
+    info.className = 'header-info';
+
+    const schema = getFormSchema(state.formType);
+
+    // Title row: title input + form-type selector on the right.
+    // The selector only renders on the first page (rendered header is also
+    // duplicated on subsequent pages, but the selector is no-print and only
+    // editable from the first instance to avoid confusion).
+    const titleRow = document.createElement('div');
+    titleRow.className = 'title-row';
+
+    const title = document.createElement('input');
+    title.className = 'title-field';
+    title.type = 'text';
+    title.placeholder = schema.titlePlaceholder;
+    title.value = state.title || '';
+    title.dataset.headerField = 'title';
+    title.addEventListener('input', () => {
+      state.title = title.value;
+      saveState();
+      syncHeaderField('title', title.value, title);
+    });
+    titleRow.appendChild(title);
+
+    // Form-type selector (no-print)
+    const typeWrap = document.createElement('div');
+    typeWrap.className = 'form-type-selector no-print';
+    const typeLabel = document.createElement('label');
+    typeLabel.textContent = 'Form Type:';
+    const typeSelect = document.createElement('select');
+    typeSelect.className = 'form-type-select';
+    Object.keys(FORM_TYPES).forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = FORM_TYPES[key].label;
+      if (key === state.formType) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener('change', () => {
+      handleFormTypeChange(typeSelect.value);
+    });
+    typeWrap.appendChild(typeLabel);
+    typeWrap.appendChild(typeSelect);
+    titleRow.appendChild(typeWrap);
+
+    info.appendChild(titleRow);
+
+    // Meta-field row(s) - schema-driven. If the schema has no fields (e.g.
+    // 'blank'), skip the row entirely.
+    if (schema.fields.length > 0) {
+      const metaRow = document.createElement('div');
+      metaRow.className = 'meta-row';
+
+      schema.fields.forEach(f => {
+        const wrap = document.createElement('div');
+        wrap.className = 'meta-field';
+        const label = document.createElement('label');
+        label.textContent = f.label + ':';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.width = f.width + 'px';
+        input.value = (state.metaFields && state.metaFields[f.key]) || '';
+        input.dataset.headerField = f.key;
+        input.addEventListener('input', () => {
+          if (!state.metaFields) state.metaFields = {};
+          state.metaFields[f.key] = input.value;
+          saveState();
+          syncHeaderField(f.key, input.value, input);
+        });
+        wrap.appendChild(label);
+        wrap.appendChild(input);
+        metaRow.appendChild(wrap);
+      });
+      info.appendChild(metaRow);
+    }
+
+    header.appendChild(info);
+    return header;
+  }
+
+  function handleFormTypeChange(newType) {
+    if (!FORM_TYPES[newType] || newType === state.formType) return;
+    // Determine which meta fields would be lost in the switch.
+    const oldKeys = Object.keys(state.metaFields || {})
+      .filter(k => state.metaFields[k] && state.metaFields[k].trim());
+    const newKeys = new Set(getFormSchema(newType).fields.map(f => f.key));
+    const orphaned = oldKeys.filter(k => !newKeys.has(k));
+
+    if (orphaned.length > 0) {
+      const labels = orphaned.map(k => '"' + k + '"').join(', ');
+      const ok = confirm(
+        'Switching form types will discard data in fields not used by ' +
+        'the new form: ' + labels + '. Continue?'
+      );
+      if (!ok) {
+        // Revert the dropdown selection
+        const sel = document.querySelector('.form-type-select');
+        if (sel) sel.value = state.formType;
+        return;
+      }
+      // Drop orphaned fields
+      orphaned.forEach(k => { delete state.metaFields[k]; });
+    }
+
+    state.formType = newType;
+    saveState();
+    render();
+  }
+
+  // The header is duplicated on every page; sync without re-rendering so
+  // typing doesn't lose focus.
+  function syncHeaderField(field, value, sourceEl) {
+    const matches = document.querySelectorAll('[data-header-field="' + field + '"]');
+    matches.forEach(el => {
+      if (el !== sourceEl && el.value !== value) el.value = value;
+    });
+    // Title also appears in every page footer; update those without a full re-render.
+    if (field === 'title') {
+      const display = (typeof value === 'string' && value.trim()) ? value : 'Untitled';
+      document.querySelectorAll('.page-footer-title').forEach(el => {
+        el.textContent = display;
+      });
+    }
+  }
+
+  function buildRowElement(row) {
+    if (row.type === 'spacer') {
+      const el = document.createElement('div');
+      el.className = 'row row-spacer';
+      // Height drives the visible gap. The block reference is purely for
+      // diagnostics (data-attribute) - spacers have no controls or text.
+      el.style.height = row.height + 'in';
+      el.setAttribute('aria-hidden', 'true');
+      if (row.block && row.block.id) el.dataset.spacerForBlock = row.block.id;
+      return el;
+    }
+    if (row.type === 'callout') {
+      const el = document.createElement('div');
+      el.className = 'row row-callout';
+      el.dataset.rowBlockId = row.block.id;
+      el.appendChild(buildCalloutElement(row.block));
+      return el;
+    }
+    if (row.type === 'section') {
+      const el = document.createElement('div');
+      el.className = 'row row-section';
+      el.dataset.rowBlockId = row.block.id;
+      el.appendChild(buildSectionElement(row.block));
+      return el;
+    }
+    if (row.type === 'parts') {
+      const el = document.createElement('div');
+      el.className = 'row row-parts';
+      el.dataset.rowBlockId = row.block.id;
+      el.appendChild(buildPartsElement(row.block));
+      return el;
+    }
+    if (row.type === 'photoarraychunk') {
+      const el = document.createElement('div');
+      el.className = 'row row-photoarray';
+      el.dataset.rowBlockId = row.block.id;
+      // Optional title bar above the photo grid. Only on the FIRST chunk -
+      // a multi-page photo array shouldn't repeat its title on every page.
+      if (row.isFirstChunk && typeof row.block.title === 'string') {
+        el.appendChild(buildBlockTitleBar(row.block));
+      }
+      el.appendChild(buildPhotoArrayElement(row.block, {
+        rowIndices: row.rowIndices,
+        isFirstChunk: row.isFirstChunk,
+        isLastChunk: row.isLastChunk
+      }));
+      return el;
+    }
+    if (row.type === 'photoarray') {
+      // Legacy path - building the full block (no split). Used by tests and
+      // any caller that bypassed blocksToRows expansion.
+      const el = document.createElement('div');
+      el.className = 'row row-photoarray';
+      el.dataset.rowBlockId = row.block.id;
+      if (typeof row.block.title === 'string') {
+        el.appendChild(buildBlockTitleBar(row.block));
+      }
+      el.appendChild(buildPhotoArrayElement(row.block));
+      return el;
+    }
+    if (row.type === 'textbox') {
+      const el = document.createElement('div');
+      el.className = 'row row-textbox';
+      el.dataset.rowBlockId = row.block.id;
+      el.appendChild(buildTextBoxElement(row.block));
+      return el;
+    }
+    // step
+    const el = document.createElement('div');
+    el.className = 'row row-step';
+    el.dataset.rowBlockId = row.block.id;
+    if (typeof row.block.title === 'string') {
+      el.appendChild(buildBlockTitleBar(row.block));
+    }
+    el.appendChild(buildStepElement(row.block));
+    return el;
+  }
+
+  function buildStepElement(block) {
+    const el = document.createElement('div');
+    // .has-title relocates the step-number badge inside the step body so
+    // it doesn't try to "stick out" above the cobalt title bar.
+    el.className = 'step' + (typeof block.title === 'string' ? ' has-title' : '');
+    el.dataset.blockId = block.id;
+
+    const num = document.createElement('div');
+    num.className = 'step-number';
+    num.textContent = block._number != null ? block._number : '';
+    el.appendChild(num);
+
+    el.appendChild(buildBlockControls(block));
+
+    // ----- Image area -----
+    const imgArea = document.createElement('div');
+    imgArea.className = 'step-image' + (block.img ? ' has-image' : '');
+    imgArea.title = 'Click or drop an image';
+    imgArea.addEventListener('click', (e) => {
+      if (e.target.closest('.clear-btn') || e.target.closest('.block-controls')) return;
+      handleStepImageUpload(block.id);
+    });
+    attachDropTarget(imgArea, async (file) => {
+      try {
+        const dataUrl = await loadStepImageFile(file);
+        const b = findBlockById(block.id);
+        if (b) {
+          b.img = dataUrl;
+          saveState();
+          render();
+        }
+      } catch (err) {
+        alert('Could not load image: ' + err.message);
+      }
+    });
+
+    if (block.img) {
+      const img = document.createElement('img');
+      img.src = block.img;
+      img.alt = 'Step ' + (block._number != null ? block._number : '') + ' image';
+      imgArea.appendChild(img);
+      imgArea.appendChild(buildClearButton('Remove image', (e) => {
+        e.stopPropagation();
+        const b = findBlockById(block.id);
+        if (b) {
+          b.img = null;
+          saveState();
+          render();
+        }
+      }));
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload image<br><small>or drag &amp; drop</small>';
+      imgArea.appendChild(ph);
+    }
+    el.appendChild(imgArea);
+
+    // ----- Editable text -----
+    const text = document.createElement('div');
+    text.className = 'step-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type instruction text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Browsers leave a stray <br> when the field is fully cleared; reset
+      // so the placeholder reappears.
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b) {
+          b.text = '';
+          saveState();
+        }
+      }
+    });
+    el.appendChild(text);
+
+    return el;
+  }
+
+  function buildPartsElement(block) {
+    const el = document.createElement('div');
+    el.className = 'parts-block';
+    el.dataset.blockId = block.id;
+
+    // ----- Header bar with editable title -----
+    const header = document.createElement('div');
+    header.className = 'parts-header';
+    const headerLabel = document.createElement('div');
+    headerLabel.className = 'parts-header-label rich-text-editor';
+    headerLabel.contentEditable = 'true';
+    headerLabel.spellcheck = true;
+    headerLabel.dataset.placeholder = 'Chart title';
+    headerLabel.dataset.blockId = block.id;
+    headerLabel.innerHTML = block.title || '';
+    // Single-line: block Enter, strip newlines from paste.
+    headerLabel.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        headerLabel.blur();
+      }
+    });
+    headerLabel.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (flat) document.execCommand('insertText', false, flat);
+    });
+    headerLabel.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.title = headerLabel.innerHTML;
+        saveState();
+      }
+    });
+    headerLabel.addEventListener('blur', () => {
+      // Reset stray <br> so placeholder reappears when fully cleared.
+      if (headerLabel.innerHTML === '<br>' || headerLabel.textContent.trim() === '') {
+        headerLabel.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b) {
+          b.title = '';
+          saveState();
+        }
+      }
+    });
+    header.appendChild(headerLabel);
+    el.appendChild(header);
+
+    // ----- Block controls (move/delete the whole table) -----
+    el.appendChild(buildBlockControls(block));
+
+    // ----- Table -----
+    const table = document.createElement('table');
+    table.className = 'parts-table';
+
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+
+    block.columns.forEach((colName, colIdx) => {
+      const th = document.createElement('th');
+      th.appendChild(buildPartsCell(block.id, colName, {
+        isHeader: true,
+        colIdx: colIdx,
+        placeholder: 'Column',
+        onChange: (value) => {
+          const b = findBlockById(block.id);
+          if (b && Array.isArray(b.columns)) {
+            b.columns[colIdx] = value;
+            saveState();
+          }
+        }
+      }));
+      // Column delete (only if more than 1 column)
+      if (block.columns.length > 1) {
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'parts-col-delete no-print';
+        delBtn.title = 'Delete this column';
+        delBtn.textContent = '\u2715';  // ✕
+        delBtn.addEventListener('mousedown', e => e.preventDefault());
+        delBtn.addEventListener('click', () => removePartsColumn(block.id, colIdx));
+        th.appendChild(delBtn);
+      }
+      headerRow.appendChild(th);
+    });
+
+    // Right gutter for row-action buttons
+    const gutterTh = document.createElement('th');
+    gutterTh.className = 'parts-actions-col no-print';
+    headerRow.appendChild(gutterTh);
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    block.rows.forEach((row, rowIdx) => {
+      const tr = document.createElement('tr');
+      block.columns.forEach((_, colIdx) => {
+        const td = document.createElement('td');
+        td.appendChild(buildPartsCell(block.id, row[colIdx] || '', {
+          isHeader: false,
+          rowIdx: rowIdx,
+          colIdx: colIdx,
+          placeholder: '',
+          onChange: (value) => {
+            const b = findBlockById(block.id);
+            if (b && Array.isArray(b.rows) && b.rows[rowIdx]) {
+              b.rows[rowIdx][colIdx] = value;
+              saveState();
+            }
+          }
+        }));
+        tr.appendChild(td);
+      });
+      // Row delete in gutter (only if more than 1 row)
+      const gutterTd = document.createElement('td');
+      gutterTd.className = 'parts-actions-col no-print';
+      if (block.rows.length > 1) {
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'parts-row-delete';
+        delBtn.title = 'Delete this row';
+        delBtn.textContent = '\u2715';  // ✕
+        delBtn.addEventListener('mousedown', e => e.preventDefault());
+        delBtn.addEventListener('click', () => removePartsRow(block.id, rowIdx));
+        gutterTd.appendChild(delBtn);
+      }
+      tr.appendChild(gutterTd);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.appendChild(table);
+
+    // ----- Action footer (no-print) -----
+    const actions = document.createElement('div');
+    actions.className = 'parts-actions no-print';
+
+    const addRowBtn = document.createElement('button');
+    addRowBtn.type = 'button';
+    addRowBtn.textContent = '+ Row';
+    addRowBtn.title = 'Add a new row to the parts list';
+    addRowBtn.addEventListener('mousedown', e => e.preventDefault());
+    addRowBtn.addEventListener('click', () => addPartsRow(block.id));
+    actions.appendChild(addRowBtn);
+
+    const addColBtn = document.createElement('button');
+    addColBtn.type = 'button';
+    addColBtn.textContent = '+ Column';
+    addColBtn.title = 'Add a new column to the parts list';
+    addColBtn.addEventListener('mousedown', e => e.preventDefault());
+    addColBtn.addEventListener('click', () => addPartsColumn(block.id));
+    actions.appendChild(addColBtn);
+
+    const hint = document.createElement('span');
+    hint.className = 'parts-paste-hint';
+    hint.textContent = 'Tip: paste tabular data from Excel directly into a cell';
+    actions.appendChild(hint);
+
+    el.appendChild(actions);
+
+    return el;
+  }
+
+  function buildPartsCell(blockId, initialValue, opts) {
+    // Each cell is a single-line contenteditable div. Tab moves to next cell
+    // (browser default since each cell is a separate focusable contenteditable).
+    const cell = document.createElement('div');
+    const isHeader = !!opts.isHeader;
+    cell.className = 'parts-cell' + (isHeader ? ' parts-col-header' : ' rich-text-editor');
+    cell.contentEditable = 'true';
+    cell.spellcheck = !isHeader;
+    cell.dataset.blockId = blockId;
+    if (opts.placeholder) {
+      cell.dataset.placeholder = opts.placeholder;
+    }
+    // Body cells store HTML (so bold/color/font-size from the format toolbar
+    // round-trip through save/load). Column headers are kept as plain text
+    // - the saved column name is just a label, formatting it would be
+    // confusing.
+    if (isHeader) {
+      cell.textContent = initialValue || '';
+    } else {
+      cell.innerHTML = initialValue || '';
+      // Body cells participate in the multi-cell drag selection.
+      cell.dataset.partsRow = opts.rowIdx;
+      cell.dataset.partsCol = opts.colIdx;
+      attachPartsCellDragHandlers(cell, blockId, opts.rowIdx, opts.colIdx);
+    }
+    // Single-line: block Enter
+    cell.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cell.blur();
+      }
+    });
+    // Paste handler: detect tab/newline-delimited data (e.g. from Excel) and
+    // distribute it across cells starting from the current one. Single-cell
+    // pastes still go in flat as plain text.
+    cell.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      if (!raw) return;
+
+      const grid = parseTabularPaste(raw);
+      const isMultiCell = grid.length > 1 || (grid.length === 1 && grid[0].length > 1);
+
+      if (!isMultiCell || isHeader) {
+        // Single-cell paste, or paste into a column header: keep flat behavior.
+        const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (flat) {
+          document.execCommand('insertText', false, flat);
+        }
+        return;
+      }
+
+      // Multi-cell paste into a body cell: drop the grid into the table starting here.
+      pasteGridIntoTable(blockId, opts.rowIdx, opts.colIdx, grid);
+    });
+    cell.addEventListener('input', () => {
+      if (isHeader) {
+        opts.onChange(cell.textContent);
+      } else {
+        // Body cells round-trip HTML so format-toolbar marks survive saves.
+        opts.onChange(cell.innerHTML);
+      }
+    });
+    cell.addEventListener('blur', () => {
+      if (isHeader) return;
+      // Browsers leave a stray <br> when the field is fully cleared; reset
+      // so the placeholder reappears.
+      if (cell.innerHTML === '<br>') {
+        cell.innerHTML = '';
+        opts.onChange('');
+      }
+    });
+    return cell;
+  }
+
+  // ---------- Parts: drag-to-select multi-cell selection ----------
+  function clearPartsCellSelection() {
+    partsCellSelection.clear();
+    document.querySelectorAll('.parts-cell-selected')
+      .forEach(td => td.classList.remove('parts-cell-selected'));
+  }
+
+  function applyPartsSelectionVisual() {
+    // Cheaper than re-rendering: just toggle the selected class on each
+    // body cell's wrapping <td> based on the current selection map.
+    document.querySelectorAll('.parts-table tbody td.parts-cell-selected')
+      .forEach(td => td.classList.remove('parts-cell-selected'));
+    partsCellSelection.forEach((cells, blockId) => {
+      const blockEl = document.querySelector('.parts-block[data-block-id="' + blockId + '"]');
+      if (!blockEl) return;
+      cells.forEach(key => {
+        const [r, c] = key.split('-');
+        const cellEl = blockEl.querySelector(
+          '.parts-cell[data-parts-row="' + r + '"][data-parts-col="' + c + '"]'
+        );
+        if (cellEl && cellEl.parentElement) {
+          cellEl.parentElement.classList.add('parts-cell-selected');
+        }
+      });
+    });
+  }
+
+  function extendPartsSelection(blockId, r1, c1, r2, c2) {
+    const minR = Math.min(r1, r2);
+    const maxR = Math.max(r1, r2);
+    const minC = Math.min(c1, c2);
+    const maxC = Math.max(c1, c2);
+    const set = new Set();
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        set.add(r + '-' + c);
+      }
+    }
+    // Replace any previous selection on this block - the drag starts fresh
+    // each mousedown.
+    partsCellSelection.set(blockId, set);
+    applyPartsSelectionVisual();
+  }
+
+  function attachPartsCellDragHandlers(cell, blockId, rowIdx, colIdx) {
+    cell.addEventListener('mousedown', (e) => {
+      // Left button only. Don't interfere with right-click, middle-click, etc.
+      if (e.button !== 0) return;
+      // A fresh mousedown clears any previous selection (across all blocks)
+      // so the user can drag a brand new range without first clicking off.
+      clearPartsCellSelection();
+      partsDrag = {
+        blockId: blockId,
+        startRow: rowIdx,
+        startCol: colIdx,
+        hasMoved: false
+      };
+    });
+    cell.addEventListener('mouseenter', () => {
+      // Drag must be active AND moving into a NEW cell to count as a
+      // multi-cell selection gesture. A single click that never moves
+      // leaves no selection (regular text-cursor placement).
+      if (!partsDrag || partsDrag.blockId !== blockId) return;
+      if (partsDrag.startRow === rowIdx && partsDrag.startCol === colIdx) return;
+      partsDrag.hasMoved = true;
+      extendPartsSelection(blockId, partsDrag.startRow, partsDrag.startCol, rowIdx, colIdx);
+    });
+  }
+
+  // Global mouseup ends the drag. If the user never moved into another cell
+  // the selection map stays clear (mousedown reset it but we never extended)
+  // - that's a plain click, not a multi-cell gesture.
+  document.addEventListener('mouseup', () => {
+    if (partsDrag) partsDrag = null;
+  });
+  // Clicking anywhere outside any parts-table body cell clears the
+  // selection so it doesn't linger after the user has moved on. Exempt
+  // the format toolbars - those are valid follow-up interactions on an
+  // active multi-cell selection (their buttons preventDefault on mousedown
+  // to preserve the selection).
+  document.addEventListener('mousedown', (e) => {
+    if (partsCellSelection.size === 0) return;
+    const t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest('.parts-table tbody .parts-cell')) return;
+    if (t.closest('.floating-fmt-toolbar')) return;
+    if (t.closest('.sidebar')) return;
+    clearPartsCellSelection();
+  });
+
+  // ---------- Parts: tabular paste handling ----------
+
+  // Parse plain-text tabular data (TSV / CSV / pipe-delimited / multi-space).
+  // Excel and Google Sheets put tab-separated values on the clipboard, with
+  // newlines between rows. We accept other reasonable delimiters too.
+  function parseTabularPaste(raw) {
+    // Normalize line endings, drop any trailing blank line that Excel adds.
+    const lines = raw.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
+    if (lines.length === 0) return [[]];
+
+    // Pick a delimiter: TSV first (Excel default), then CSV, then pipe, then
+    // 2+ spaces. Fall back to "single cell per line" if none match.
+    let delimiter = null;
+    if (lines.some(l => l.indexOf('\t') !== -1)) {
+      delimiter = '\t';
+    } else if (lines.some(l => l.indexOf(',') !== -1)) {
+      // CSV-ish. We use a real splitter that handles quoted fields.
+      return lines.map(parseCsvLine);
+    } else if (lines.some(l => l.indexOf('|') !== -1)) {
+      delimiter = '|';
+    } else if (lines.some(l => /\S {2,}\S/.test(l))) {
+      // Multi-space-delimited (e.g. fixed-width text)
+      return lines.map(l => l.split(/ {2,}/).map(c => c.trim()));
+    }
+
+    if (delimiter !== null) {
+      return lines.map(l => l.split(delimiter).map(c => c.trim()));
+    }
+    return lines.map(l => [l.trim()]);
+  }
+
+  // Split one CSV line, respecting "double quoted" fields (handles escaped "")
+  function parseCsvLine(line) {
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQuotes = false; }
+        } else {
+          cur += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          out.push(cur.trim());
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  // Drop a 2D grid of values into the table starting at (rowIdx, colIdx).
+  // Grows rows and columns as needed so nothing is silently truncated.
+  function pasteGridIntoTable(blockId, rowIdx, colIdx, grid) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (typeof rowIdx !== 'number' || typeof colIdx !== 'number') return;
+
+    const rowsNeeded = grid.length;
+    const colsNeeded = grid.reduce((m, r) => Math.max(m, r.length), 0);
+    if (rowsNeeded === 0 || colsNeeded === 0) return;
+
+    // Grow columns if pasting wider than the table
+    while (b.columns.length < colIdx + colsNeeded) {
+      b.columns.push('Column ' + (b.columns.length + 1));
+      b.rows.forEach(r => r.push(''));
+    }
+    // Grow rows if pasting taller than the table
+    while (b.rows.length < rowIdx + rowsNeeded) {
+      b.rows.push(Array(b.columns.length).fill(''));
+    }
+    // Stamp values
+    for (let r = 0; r < rowsNeeded; r++) {
+      const targetRow = rowIdx + r;
+      const sourceRow = grid[r] || [];
+      for (let c = 0; c < colsNeeded; c++) {
+        const targetCol = colIdx + c;
+        const v = (sourceRow[c] == null) ? '' : String(sourceRow[c]);
+        b.rows[targetRow][targetCol] = v;
+      }
+    }
+
+    saveState();
+    // Re-render so the grown cells show up; restore focus to the anchor cell
+    // afterwards so users can keep typing there.
+    focusBlockIdAfterRender = blockId;
+    render();
+
+    // Defer focus restore until after the render so the new DOM is in place.
+    setTimeout(() => {
+      const sel = '.parts-block[data-block-id="' + blockId + '"] tbody tr:nth-child(' + (rowIdx + 1) + ') td:nth-child(' + (colIdx + 1) + ') .parts-cell';
+      const cell = document.querySelector(sel);
+      if (cell) cell.focus();
+    }, 0);
+  }
+
+  // ---------- Parts table operations ----------
+  function addPartsRow(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    b.rows.push(Array(b.columns.length).fill(''));
+    saveState();
+    render();
+  }
+
+  function removePartsRow(blockId, rowIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (b.rows.length <= 1) return;  // never delete the last row
+    if (rowIdx < 0 || rowIdx >= b.rows.length) return;
+    const hasData = b.rows[rowIdx].some(c => c && c.trim());
+    if (hasData && !confirm('Delete this row? Data will be lost.')) return;
+    b.rows.splice(rowIdx, 1);
+    saveState();
+    render();
+  }
+
+  function addPartsColumn(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    b.columns.push('Column ' + (b.columns.length + 1));
+    b.rows.forEach(r => r.push(''));
+    saveState();
+    render();
+  }
+
+  function removePartsColumn(blockId, colIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'parts') return;
+    if (b.columns.length <= 1) return;  // never delete the last column
+    if (colIdx < 0 || colIdx >= b.columns.length) return;
+    const hasData = b.rows.some(r => r[colIdx] && r[colIdx].trim());
+    if (hasData && !confirm('Delete this column? Data will be lost.')) return;
+    b.columns.splice(colIdx, 1);
+    b.rows.forEach(r => r.splice(colIdx, 1));
+    saveState();
+    render();
+  }
+
+  // ---------- Photo array element ----------
+  // Keep a photo array row's data left-compacted: populated cells first,
+  // padded with nulls. Display relies on this invariant. A "populated" cell
+  // is an object with a non-empty src (caption is allowed to be empty).
+  function compactPhotoArrayRow(row) {
+    if (!Array.isArray(row)) return [null, null, null];
+    const out = row.filter(c => c && typeof c === 'object' && typeof c.src === 'string' && c.src).slice(0, 3);
+    while (out.length < 3) out.push(null);
+    return out;
+  }
+
+  function buildPhotoArrayElement(block, chunkOpts) {
+    // chunkOpts is optional. When omitted, the entire block renders (legacy
+    // behavior). When supplied:
+    //   - rowIndices: which row indices of block.rows to render (in order)
+    //   - isFirstChunk: true if this chunk contains row 0 of the block
+    //   - isLastChunk:  true if this chunk contains the last row of the block
+    // Block-level controls (move/delete) appear on the first chunk only;
+    // the "+ Row" affordance appears on the last chunk only. Per-row
+    // controls (Delete Row / + Add Photo) live on each row regardless.
+    const rowIndices = chunkOpts && Array.isArray(chunkOpts.rowIndices)
+      ? chunkOpts.rowIndices
+      : block.rows.map((_, i) => i);
+    const isFirstChunk = chunkOpts ? !!chunkOpts.isFirstChunk : true;
+    const isLastChunk  = chunkOpts ? !!chunkOpts.isLastChunk  : true;
+
+    const el = document.createElement('div');
+    el.className = 'photoarray-block';
+    el.dataset.blockId = block.id;
+    if (!isFirstChunk) el.classList.add('photoarray-block-continuation');
+
+    if (isFirstChunk) el.appendChild(buildBlockControls(block));
+
+    rowIndices.forEach(rowIdx => {
+      const row = block.rows[rowIdx];
+      if (!row) return;  // safety: skip out-of-range indices
+      const rowWrap = document.createElement('div');
+      rowWrap.className = 'photoarray-row-wrapper';
+
+      // Count populated cells. Data is normalized to be left-compact, so the
+      // count is just the leading non-null run. A populated cell is an object
+      // with a non-empty src (the caption is allowed to be empty).
+      const populatedCount = row.filter(c => c && c.src).length;
+
+      // Pending placeholder cells = how many empty placeholder cells to
+      // render past the populated ones. The user adds these by clicking
+      // "+ Add Photo"; they let the user click-to-pick OR drag-and-drop a
+      // file into a clearly visible empty box, matching the look of an
+      // initially-empty row.
+      const pendingKey = block.id + '__' + rowIdx;
+      // Drop stale entries: pending only makes sense between 1 and 2
+      // populated cells. Outside that range it's never rendered.
+      if (populatedCount === 0 || populatedCount >= 3) {
+        pendingPhotoSlot.delete(pendingKey);
+      }
+      const pending = pendingPhotoSlot.get(pendingKey) || 0;
+
+      // Empty row: show three placeholders so the user can pick where to
+      // start. Otherwise, render the populated cells plus any requested
+      // pending placeholders; the count drives grid-template-columns via
+      // the count-N modifier class. Capped at 3 cells per row.
+      let cellsToRender;
+      if (populatedCount === 0) {
+        cellsToRender = 3;
+      } else {
+        cellsToRender = Math.min(3, populatedCount + pending);
+      }
+      const layoutClass = 'count-' + cellsToRender;
+
+      const grid = document.createElement('div');
+      grid.className = 'photoarray-row ' + layoutClass;
+
+      for (let i = 0; i < cellsToRender; i++) {
+        // Slot i < populatedCount renders the populated entry at that slot.
+        // Slot i >= populatedCount renders a placeholder cell (entry = null).
+        // The placeholder uses colIdx = i so the upload/drop handler writes
+        // into the right slot.
+        grid.appendChild(buildPhotoArrayCell(block.id, rowIdx, i, row[i] || null));
+      }
+
+      rowWrap.appendChild(grid);
+
+      // Action strip below the row: holds the "+ Add Photo" and "Delete Row"
+      // buttons. Built inline so they're always visible (the previous
+      // floating-circle design lived in the page gutter and was easy to
+      // miss). Strip is rendered only when at least one action exists.
+      // Hide "+ Add Photo" once every visible cell is either populated or
+      // pending - there's no room for another.
+      const showAddBtn = populatedCount > 0 && (populatedCount + pending) < 3;
+      const showDelBtn = block.rows.length > 1;
+
+      if (showAddBtn || showDelBtn) {
+        const actions = document.createElement('div');
+        actions.className = 'photoarray-row-actions no-print';
+
+        if (showAddBtn) {
+          const addBtn = document.createElement('button');
+          addBtn.type = 'button';
+          addBtn.className = 'photoarray-add-image';
+          addBtn.title = 'Show an empty cell to drop or click an image into';
+          addBtn.textContent = '+ Add Photo';
+          addBtn.addEventListener('mousedown', e => e.preventDefault());
+          addBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cur = pendingPhotoSlot.get(pendingKey) || 0;
+            if (populatedCount + cur < 3) {
+              pendingPhotoSlot.set(pendingKey, cur + 1);
+              render();
+            }
+          });
+          actions.appendChild(addBtn);
+        }
+
+        if (showDelBtn) {
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'photoarray-row-delete';
+          del.title = 'Delete this row';
+          del.textContent = 'Delete Row';
+          del.addEventListener('mousedown', e => e.preventDefault());
+          del.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removePhotoArrayRow(block.id, rowIdx);
+          });
+          actions.appendChild(del);
+        }
+
+        rowWrap.appendChild(actions);
+      }
+
+      el.appendChild(rowWrap);
+    });
+
+    // "+ Row" lives at the bottom of the BLOCK. When the block is split
+    // across pages we only render it on the last chunk so it doesn't appear
+    // mid-block.
+    if (isLastChunk) {
+      const addRowBtn = document.createElement('button');
+      addRowBtn.type = 'button';
+      addRowBtn.className = 'photoarray-add-row no-print';
+      addRowBtn.textContent = '+ Row';
+      addRowBtn.title = 'Add a new row of photos';
+      addRowBtn.addEventListener('mousedown', e => e.preventDefault());
+      addRowBtn.addEventListener('click', () => addPhotoArrayRow(block.id));
+      el.appendChild(addRowBtn);
+    }
+
+    return el;
+  }
+
+  function buildPhotoArrayCell(blockId, rowIdx, colIdx, entry) {
+    // entry is either null (placeholder cell) or { src, caption }.
+    const imgDataUrl = entry && entry.src ? entry.src : null;
+    const captionText = entry && typeof entry.caption === 'string' ? entry.caption : '';
+
+    const cell = document.createElement('div');
+    cell.className = 'photoarray-cell' + (imgDataUrl ? ' has-image' : '');
+    cell.title = imgDataUrl ? 'Click to replace this image' : 'Click or drop an image';
+    cell.tabIndex = 0;  // make focusable so render() can focus it after insert
+
+    cell.addEventListener('click', (e) => {
+      // Clicks on the clear button or the caption input shouldn't trigger
+      // the upload picker - let those handlers run on their own.
+      if (e.target.closest('.clear-btn')) return;
+      if (e.target.closest('.photoarray-caption')) return;
+      handlePhotoArrayUpload(blockId, rowIdx, colIdx);
+    });
+    // Keyboard activation: Enter or Space opens the upload picker
+    cell.addEventListener('keydown', (e) => {
+      // Caption input handles its own keys; don't hijack them
+      if (e.target.closest('.photoarray-caption')) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handlePhotoArrayUpload(blockId, rowIdx, colIdx);
+      }
+    });
+    attachDropTarget(cell, async (firstFile, allFiles) => {
+      // Multi-file support: dropping N files starting at colIdx K fills slots
+      // K, K+1, K+2 (capped at the row's 3-cell capacity). Files past the
+      // capacity are ignored. Existing captions are preserved when a slot
+      // already has one.
+      const files = (allFiles && allFiles.length) ? allFiles : [firstFile];
+      const b = findBlockById(blockId);
+      if (!b || b.type !== 'photoarray' || !b.rows[rowIdx]) return;
+
+      let wrote = 0;
+      for (let fi = 0; fi < files.length; fi++) {
+        const targetSlot = colIdx + fi;
+        if (targetSlot >= 3) break;  // row is at capacity
+        const f = files[fi];
+        if (!f || !f.type || !f.type.startsWith('image/')) continue;
+        try {
+          const dataUrl = await loadStepImageFile(f);
+          const existing = b.rows[rowIdx][targetSlot];
+          const keepCaption = (existing && typeof existing === 'object' && typeof existing.caption === 'string')
+            ? existing.caption : '';
+          b.rows[rowIdx][targetSlot] = { src: dataUrl, caption: keepCaption };
+          wrote++;
+        } catch (err) {
+          console.warn('Could not load image:', err && err.message);
+        }
+      }
+
+      if (wrote > 0) {
+        b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
+        // Each file consumed one pending placeholder (if any were active).
+        const k = blockId + '__' + rowIdx;
+        const cur = pendingPhotoSlot.get(k) || 0;
+        const next = Math.max(0, cur - wrote);
+        if (next === 0) pendingPhotoSlot.delete(k);
+        else pendingPhotoSlot.set(k, next);
+        saveState();
+        render();
+      } else if (files.length === 0 || !files.some(f => f && f.type && f.type.startsWith('image/'))) {
+        alert('Please drop an image file.');
+      }
+    });
+
+    if (imgDataUrl) {
+      // Image area takes the upper portion of the cell.
+      const imgArea = document.createElement('div');
+      imgArea.className = 'photoarray-cell-image';
+
+      const img = document.createElement('img');
+      img.src = imgDataUrl;
+      img.alt = 'Photo';
+      imgArea.appendChild(img);
+      imgArea.appendChild(buildClearButton('Remove image', (e) => {
+        e.stopPropagation();
+        const b = findBlockById(blockId);
+        if (b && b.type === 'photoarray' && b.rows[rowIdx]) {
+          // Removing the image discards the caption too - they belong to the
+          // same cell. If you want to keep the caption, edit the image instead.
+          b.rows[rowIdx][colIdx] = null;
+          b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
+          saveState();
+          render();
+        }
+      }));
+      cell.appendChild(imgArea);
+
+      // Caption input below the image. Single-line text only.
+      const cap = document.createElement('input');
+      cap.type = 'text';
+      cap.className = 'photoarray-caption';
+      cap.placeholder = 'Caption';
+      cap.value = captionText;
+      cap.maxLength = 200;
+      cap.addEventListener('mousedown', e => e.stopPropagation());
+      cap.addEventListener('click', e => e.stopPropagation());
+      cap.addEventListener('input', () => {
+        const b = findBlockById(blockId);
+        if (b && b.type === 'photoarray' && b.rows[rowIdx] && b.rows[rowIdx][colIdx]) {
+          b.rows[rowIdx][colIdx].caption = cap.value;
+          saveState();
+          // No render() here - the caption text is already in the input;
+          // re-rendering would steal focus and lose the cursor position.
+        }
+      });
+      cell.appendChild(cap);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Click to upload<br><small>or drag &amp; drop</small>';
+      cell.appendChild(ph);
+    }
+    return cell;
+  }
+
+  async function handlePhotoArrayUpload(blockId, rowIdx, colIdx) {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      const dataUrl = await loadStepImageFile(file);
+      const b = findBlockById(blockId);
+      if (b && b.type === 'photoarray' && b.rows[rowIdx]) {
+        // Preserve any caption already on this cell when replacing the image.
+        const existing = b.rows[rowIdx][colIdx];
+        const keepCaption = (existing && typeof existing === 'object' && typeof existing.caption === 'string')
+          ? existing.caption : '';
+        b.rows[rowIdx][colIdx] = { src: dataUrl, caption: keepCaption };
+        // Re-compact in case caller pointed at a slot past the populated run
+        // (e.g. clicking the placeholder cell rendered for + Add Photo).
+        b.rows[rowIdx] = compactPhotoArrayRow(b.rows[rowIdx]);
+        // A placeholder cell just became populated, so consume one pending
+        // slot for this row (if any).
+        const k = blockId + '__' + rowIdx;
+        const cur = pendingPhotoSlot.get(k) || 0;
+        if (cur > 0) {
+          const next = cur - 1;
+          if (next === 0) pendingPhotoSlot.delete(k);
+          else pendingPhotoSlot.set(k, next);
+        }
+        saveState();
+        render();
+      }
+    } catch (err) {
+      alert('Could not load image: ' + err.message);
+    }
+  }
+
+  function addPhotoArrayRow(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'photoarray') return;
+    b.rows.push([null, null, null]);
+    saveState();
+    render();
+  }
+
+  function removePhotoArrayRow(blockId, rowIdx) {
+    const b = findBlockById(blockId);
+    if (!b || b.type !== 'photoarray') return;
+    if (b.rows.length <= 1) return;
+    if (rowIdx < 0 || rowIdx >= b.rows.length) return;
+    const hasData = (b.rows[rowIdx][0] || b.rows[rowIdx][1] || b.rows[rowIdx][2]);
+    if (hasData && !confirm('Delete this row? Photos will be lost.')) return;
+    b.rows.splice(rowIdx, 1);
+    // Row indices for this block shift after deletion, which makes the
+    // pendingPhotoSlot keys (blockId + '__' + rowIdx) ambiguous. Cleanest
+    // fix: clear all pending entries for this block. The user can re-click
+    // + Add Photo on any other row to bring its placeholder back.
+    for (const k of Array.from(pendingPhotoSlot.keys())) {
+      if (k.startsWith(blockId + '__')) pendingPhotoSlot.delete(k);
+    }
+    saveState();
+    render();
+  }
+
+  // ---------- Text box element ----------
+  function buildTextBoxElement(block) {
+    const el = document.createElement('div');
+    el.className = 'textbox-block';
+    el.dataset.blockId = block.id;
+
+    el.appendChild(buildBlockControls(block));
+
+    const text = document.createElement('div');
+    text.className = 'textbox-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      const b = findBlockById(block.id);
+      if (!b) return;
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        b.text = '';
+        saveState();
+      }
+      // Re-paginate so a multi-line text box correctly reflows.
+      setTimeout(() => render(), 0);
+    });
+    el.appendChild(text);
+
+    return el;
+  }
+
+  function buildSectionElement(block) {
+    const el = document.createElement('div');
+    el.className = 'section-header';
+    el.dataset.blockId = block.id;
+
+    const text = document.createElement('div');
+    text.className = 'section-header-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Section title';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    // Single-line: block newline insertion
+    text.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        text.blur();
+      }
+    });
+    // Strip newlines/formatting from pasted content
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (flat) {
+        document.execCommand('insertText', false, flat);
+      }
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b) {
+          b.text = '';
+          saveState();
+        }
+      }
+    });
+    el.appendChild(text);
+
+    el.appendChild(buildBlockControls(block));
+
+    return el;
+  }
+
+  function buildCalloutElement(block) {
+    const meta = CALLOUT_KINDS[block.kind] || CALLOUT_KINDS.note;
+    const el = document.createElement('div');
+    el.className = 'callout callout-' + (CALLOUT_KINDS[block.kind] ? block.kind : 'note');
+    el.dataset.blockId = block.id;
+    if (block.color) {
+      el.style.setProperty('--callout-color', block.color);
+    }
+
+    const badge = document.createElement('div');
+    badge.className = 'callout-badge';
+    badge.textContent = meta.label;
+    el.appendChild(badge);
+
+    const text = document.createElement('div');
+    text.className = 'callout-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.dataset.placeholder = 'Type ' + meta.label.toLowerCase() + ' text here...';
+    text.spellcheck = true;
+    text.innerHTML = block.text || '';
+    text.dataset.blockId = block.id;
+    // Strip rich formatting from pasted content but preserve newlines
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      if (raw) {
+        document.execCommand('insertText', false, raw);
+      }
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b) {
+        b.text = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Browsers leave a stray <br> when the field is fully cleared; reset
+      // so the placeholder reappears.
+      const b = findBlockById(block.id);
+      if (!b) return;
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        b.text = '';
+        saveState();
+      }
+      // Defer the re-render so removing the focused element doesn't disrupt
+      // the current event loop. This recomputes pagination based on the new
+      // (possibly multi-line) callout height.
+      setTimeout(() => render(), 0);
+    });
+    el.appendChild(text);
+
+    el.appendChild(buildBlockControls(block));
+
+    return el;
+  }
+
+  function buildBlockControls(block) {
+    const wrap = document.createElement('div');
+    wrap.className = 'block-controls no-print';
+
+    // Drag handle - initiates block reorder drag
+    const handle = document.createElement('button');
+    handle.textContent = '☰';  // ☰ grip icon
+    handle.title = 'Drag to reorder';
+    handle.className = 'block-drag-handle';
+    handle.setAttribute('draggable', 'true');
+    handle.addEventListener('mousedown', (e) => e.stopPropagation());
+    handle.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/json', JSON.stringify({ source: 'block', id: block.id }));
+      _dragData = { source: 'block', id: block.id };
+      document.body.classList.add('is-dragging', 'is-dragging-block');
+      // Visually dim the block being dragged
+      const blockEl = handle.closest('[data-block-id]');
+      if (blockEl) {
+        setTimeout(() => blockEl.classList.add('block-dragging'), 0);
+      }
+    });
+    handle.addEventListener('dragend', endDrag);
+    wrap.appendChild(handle);
+
+    // Optional title bar toggle. Only step (Image|Text) and photoarray
+    // blocks support a title; the button is only offered when the block
+    // doesn't already have one (the title bar itself has its own ✕ for
+    // removal).
+    const titleAble = (block.type === 'step' || block.type === 'photoarray');
+    if (titleAble && typeof block.title !== 'string') {
+      const titleBtn = document.createElement('button');
+      titleBtn.textContent = 'T';
+      titleBtn.title = 'Add a title bar to this block';
+      titleBtn.className = 'add-title';
+      titleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addBlockTitle(block.id);
+      });
+      wrap.appendChild(titleBtn);
+    }
+
+    // Color picker - callout blocks only
+    if (block.type === 'callout') {
+      const paintBtn = document.createElement('button');
+      paintBtn.title = 'Change color';
+      paintBtn.className = 'paint-btn';
+      paintBtn.textContent = '▣';  // ▣ filled square (color indicator)
+      if (block.color) paintBtn.style.color = block.color;
+      paintBtn.addEventListener('mousedown', (e) => e.preventDefault());
+      paintBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showColorPicker(block, paintBtn);
+      });
+      wrap.appendChild(paintBtn);
+    }
+
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '\u2191';
+    upBtn.title = 'Move up';
+    upBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moveBlock(block.id, -1);
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '\u2193';
+    downBtn.title = 'Move down';
+    downBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moveBlock(block.id, +1);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '\u2715';
+    delBtn.title = 'Delete';
+    delBtn.className = 'delete';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteBlock(block.id);
+    });
+
+    wrap.appendChild(upBtn);
+    wrap.appendChild(downBtn);
+    wrap.appendChild(delBtn);
+    return wrap;
+  }
+
+  // Add an optional title bar to a step or photoarray block. Sets
+  // block.title to '' so it renders with the placeholder, then focuses
+  // the new editable so the user can type immediately.
+  function addBlockTitle(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || (b.type !== 'step' && b.type !== 'photoarray')) return;
+    if (typeof b.title === 'string') return;
+    b.title = '';
+    saveState();
+    render();
+    // Focus the newly-rendered bar so the user can start typing.
+    const titleEl = document.querySelector(
+      '[data-block-id="' + blockId + '"] .block-title-text'
+    );
+    if (titleEl) titleEl.focus();
+  }
+
+  function removeBlockTitle(blockId) {
+    const b = findBlockById(blockId);
+    if (!b || typeof b.title !== 'string') return;
+    delete b.title;
+    saveState();
+    render();
+  }
+
+  // Build the title bar element. Caller is responsible for inserting it at
+  // the top of the block's DOM. The bar is editable (rich-text-editor so
+  // the floating format toolbar appears on focus) and carries a ✕ that
+  // removes the bar entirely.
+  function buildBlockTitleBar(block) {
+    const bar = document.createElement('div');
+    bar.className = 'block-title-bar no-print-no'; // bar prints with the block
+    const text = document.createElement('div');
+    text.className = 'block-title-text rich-text-editor';
+    text.contentEditable = 'true';
+    text.spellcheck = true;
+    text.dataset.placeholder = 'Title';
+    text.dataset.blockId = block.id;
+    text.innerHTML = block.title || '';
+    // Single-line: block Enter (blur to finish), strip newlines on paste.
+    text.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        text.blur();
+      }
+    });
+    text.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      const raw = cd.getData('text/plain') || '';
+      const flat = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (flat) document.execCommand('insertText', false, flat);
+    });
+    text.addEventListener('input', () => {
+      const b = findBlockById(block.id);
+      if (b && typeof b.title === 'string') {
+        b.title = text.innerHTML;
+        saveState();
+      }
+    });
+    text.addEventListener('blur', () => {
+      // Reset stray <br> so placeholder reappears on clear.
+      if (text.innerHTML === '<br>' || text.textContent.trim() === '') {
+        text.innerHTML = '';
+        const b = findBlockById(block.id);
+        if (b && typeof b.title === 'string') {
+          b.title = '';
+          saveState();
+        }
+      }
+    });
+    bar.appendChild(text);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'block-title-remove no-print';
+    removeBtn.textContent = '\u2715';
+    removeBtn.title = 'Remove title bar';
+    removeBtn.addEventListener('mousedown', e => e.preventDefault());
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeBlockTitle(block.id);
+    });
+    bar.appendChild(removeBtn);
+
+    return bar;
+  }
+
+  function buildClearButton(title, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'clear-btn no-print';
+    btn.textContent = '\u2715';
+    btn.title = title;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function attachDropTarget(el, fileHandler) {
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      el.classList.add('dragover');
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('dragover');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('dragover');
+      const filesList = e.dataTransfer && e.dataTransfer.files;
+      if (!filesList || !filesList[0]) return;
+      const first = filesList[0];
+      if (!first.type.startsWith('image/')) {
+        alert('Please drop an image file.');
+        return;
+      }
+      // Pass the first file (back-compat for single-image callers like the
+      // logo and step image) plus the full list as a second argument for
+      // callers that handle multi-file drops (the photo array).
+      const allImages = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+      fileHandler(first, allImages);
+    });
+  }
+
+  // ---------- Upload handlers ----------
+  async function handleLogoUpload() {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      state.logo = await loadLogoFile(file);
+      saveState();
+      render();
+    } catch (err) {
+      alert('Could not load logo: ' + err.message);
+    }
+  }
+
+  async function handleStepImageUpload(blockId) {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    try {
+      const dataUrl = await loadStepImageFile(file);
+      const b = findBlockById(blockId);
+      if (b) {
+        b.img = dataUrl;
+        saveState();
+        render();
+      }
+    } catch (err) {
+      alert('Could not load image: ' + err.message);
+    }
+  }
+
+  // ---------- Block operations ----------
+  function moveBlock(id, dir) {
+    const idx = findBlockIndex(id);
+    if (idx < 0) return;
+    const block = state.blocks[idx];
+
+    if (dir === +1) {
+      const newIdx = idx + 1;
+      if (newIdx >= state.blocks.length) {
+        // No block below to swap with. Push this block down by one
+        // block-height of empty space (a "spacer"). Each repeated click
+        // adds another spacer; once the cumulative gap pushes the block
+        // past the page boundary, pagination naturally moves it onto the
+        // next page. There's no upper cap - if the user wants to stack a
+        // dozen spacers and walk the block across multiple pages, that's
+        // allowed.
+        block.precedingSpacers = (block.precedingSpacers | 0) + 1;
+        saveState();
+        focusBlockIdAfterRender = id;
+        render();
+        return;
+      }
+      const removed = state.blocks.splice(idx, 1)[0];
+      state.blocks.splice(newIdx, 0, removed);
+    } else if (dir === -1) {
+      // Up arrow: peel off any spacers above this block first (they're
+      // "yours" - you put them there with previous down clicks). Only after
+      // the spacers are gone does up arrow fall through to the array swap.
+      if ((block.precedingSpacers | 0) > 0) {
+        block.precedingSpacers = (block.precedingSpacers | 0) - 1;
+        saveState();
+        focusBlockIdAfterRender = id;
+        render();
+        return;
+      }
+      const newIdx = idx - 1;
+      if (newIdx < 0) return;
+      const removed = state.blocks.splice(idx, 1)[0];
+      state.blocks.splice(newIdx, 0, removed);
+    } else {
+      return;
+    }
+
+    saveState();
+    focusBlockIdAfterRender = id;
+    render();
+  }
+
+  function deleteBlock(id) {
+    const block = findBlockById(id);
+    if (!block) return;
+    let hasContent = false;
+    if (block.type === 'step') {
+      hasContent = !!(block.img || (block.text && block.text.trim()));
+    } else if (block.type === 'callout') {
+      hasContent = !!(block.text && block.text.trim());
+    } else if (block.type === 'section') {
+      hasContent = !!(block.text && block.text.trim());
+    } else if (block.type === 'parts') {
+      hasContent = Array.isArray(block.rows) &&
+        block.rows.some(r => Array.isArray(r) && r.some(c => c && c.trim()));
+    } else if (block.type === 'photoarray') {
+      hasContent = Array.isArray(block.rows) &&
+        block.rows.some(r => Array.isArray(r) && r.some(c => !!c));
+    } else if (block.type === 'textbox') {
+      hasContent = !!(block.text && block.text.replace(/<[^>]*>/g, '').trim());
+    }
+    if (hasContent) {
+      let label;
+      if (block.type === 'callout') {
+        label = (CALLOUT_KINDS[block.kind] ? CALLOUT_KINDS[block.kind].label : 'callout').toLowerCase() + ' callout';
+      } else if (block.type === 'section') {
+        label = 'section header';
+      } else if (block.type === 'parts') {
+        label = 'parts list';
+      } else if (block.type === 'photoarray') {
+        label = 'photo array';
+      } else if (block.type === 'textbox') {
+        label = 'text box';
+      } else {
+        label = 'step';
+      }
+      if (!confirm('Delete this ' + label + '?')) return;
+    }
+    state.blocks = state.blocks.filter(b => b.id !== id);
+    if (lastFocusedBlockId === id) {
+      lastFocusedBlockId = null;
+      lastFocusedEditable = null;
+    }
+    saveState();
+    render();
+  }
+
+  function insertBlockAfter(referenceId, newBlock) {
+    const idx = referenceId ? findBlockIndex(referenceId) : -1;
+    if (idx < 0) {
+      state.blocks.push(newBlock);
+    } else {
+      state.blocks.splice(idx + 1, 0, newBlock);
+    }
+    saveState();
+    focusBlockIdAfterRender = newBlock.id;
+    render();
+  }
+
+  function addStep() {
+    // null reference -> insertBlockAfter pushes to the end of state.blocks.
+    // Behaviour the user expects: every new block lands at the bottom of
+    // the document, never spliced into the middle just because a different
+    // block had focus earlier.
+    insertBlockAfter(null, createStepBlock());
+  }
+
+  function addCallout(kind) {
+    if (!CALLOUT_KINDS[kind]) {
+      console.warn('Unknown callout kind:', kind);
+      return;
+    }
+    insertBlockAfter(null, createCalloutBlock(kind));
+  }
+
+  function addSection() {
+    insertBlockAfter(null, createSectionBlock());
+  }
+
+  function addParts() {
+    insertBlockAfter(null, createPartsBlock());
+  }
+
+  function addPhotoArray() {
+    insertBlockAfter(null, createPhotoArrayBlock());
+  }
+
+  function addTextBox() {
+    insertBlockAfter(null, createTextBoxBlock());
+  }
+
+  // ---------- Document-level operations ----------
+  function newDocument() {
+    if (!confirm('Clear ALL content and start a fresh document?\n\n(The logo will be kept.)')) return;
+    const savedLogo = state.logo;
+    state = createEmptyState();
+    state.logo = savedLogo;
+    lastFocusedBlockId = null;
+    lastFocusedEditable = null;
+    saveState();
+    render();
+  }
+
+  // ---------- Export / Import ----------
+  function exportTemplate() {
+    try {
+      const json = JSON.stringify(state, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (state.title || 'work_instruction')
+        .replace(/[^a-z0-9_.-]/gi, '_')
+        .slice(0, 60) || 'work_instruction';
+      a.href = url;
+      a.download = safeName + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      alert('Save failed: ' + e.message);
+    }
+  }
+
+  async function importTemplate() {
+    const file = await pickFile('.json,application/json');
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onerror = () => alert('Failed to read file.');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        let next = parsed;
+        // If it's a legacy file, migrate.
+        if (!Array.isArray(parsed.blocks)) {
+          next = migrateLegacyState(parsed);
+        }
+        if (!next || !Array.isArray(next.blocks)) {
+          throw new Error('File does not contain valid template data.');
+        }
+        if (!confirm('Replace current document with the loaded file?')) return;
+        state = normalizeState(next);
+        lastFocusedBlockId = null;
+        lastFocusedEditable = null;
+        saveState();
+        render();
+      } catch (err) {
+        alert('Could not load file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- Toolbar wiring ----------
+  // contenteditable="false" on each badge tells the browser to treat the
+  // whole span as a single atomic unit inside the parent rich-text editor.
+  // Combined with the click-to-select handler installed by
+  // setupInlineIconRemoval(), this lets the user click the badge and press
+  // Delete/Backspace once to remove it cleanly (previously backspace ate one
+  // character of the badge label at a time, leaving an empty span behind).
+  const ICON_HTML = {
+    warning: '<span class="wi-icon wi-warning" contenteditable="false">\u26A0 WARNING</span>',
+    caution: '<span class="wi-icon wi-caution" contenteditable="false">\u26A0 CAUTION</span>',
+    inspect: '<span class="wi-icon wi-inspect" contenteditable="false">\u25C9 INSPECT</span>',
+    torque:  '<span class="wi-icon wi-torque"  contenteditable="false">\u2699 TORQUE</span>'
+  };
+
+  function setupFocusTracking() {
+    document.addEventListener('focusin', (e) => {
+      const el = e.target;
+      if (el && el.classList && el.classList.contains('rich-text-editor')) {
+        lastFocusedEditable = el;
+        lastFocusedBlockId = el.dataset.blockId || null;
+      }
+    });
+  }
+
+  // Make inline icon badges (.wi-icon) clickable for removal. A click on a
+  // badge selects the entire span as a DOM range so pressing Delete or
+  // Backspace removes it in one keystroke instead of nibbling its label.
+  // Also normalizes any legacy badges still in the saved document that
+  // were inserted before contenteditable="false" was added to ICON_HTML.
+  function setupInlineIconRemoval() {
+    document.addEventListener('click', (e) => {
+      const icon = e.target && e.target.closest && e.target.closest('.wi-icon');
+      if (!icon) return;
+      // The badge must live inside one of our rich-text editors - using
+      // the class avoids relying on contenteditable attribute reflection
+      // (which jsdom doesn't propagate from the property setter).
+      const editable = icon.closest('.rich-text-editor');
+      if (!editable) return;
+      // Upgrade legacy badges that don't have the attribute yet so future
+      // interactions also treat them as atomic.
+      if (icon.getAttribute('contenteditable') !== 'false') {
+        icon.setAttribute('contenteditable', 'false');
+      }
+      try {
+        // Focus FIRST, then set the selection. Reversing the order would
+        // cause the focus() call to collapse the range we just added.
+        editable.focus();
+        const range = document.createRange();
+        range.selectNode(icon);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (err) {
+        console.warn('Could not select inline icon for removal:', err);
+      }
+    });
+  }
+
+  function setupBlockToolbar() {
+    document.querySelectorAll('.sidebar [data-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const kind = btn.dataset.add;
+        if (kind === 'step') {
+          addStep();
+        } else if (kind === 'callout') {
+          addCallout(btn.dataset.kind);
+        } else if (kind === 'section') {
+          addSection();
+        } else if (kind === 'parts') {
+          addParts();
+        } else if (kind === 'photoarray') {
+          addPhotoArray();
+        } else if (kind === 'textbox') {
+          addTextBox();
+        }
+      });
+    });
+  }
+
+  function setupFormatToolbar() {
+    // Prevent the format buttons from stealing focus from the editor.
+    // Scope: format-related controls in either the sidebar or the floating
+    // popup toolbar (both carry data-cmd / data-icon attributes).
+    const fmtSelectors = '.sidebar [data-cmd], .sidebar [data-icon],' +
+                         ' .floating-fmt-toolbar [data-cmd], .floating-fmt-toolbar [data-icon]';
+    document.querySelectorAll(fmtSelectors).forEach(btn => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+    });
+
+    document.querySelectorAll(
+      '.sidebar [data-cmd], .floating-fmt-toolbar [data-cmd]'
+    ).forEach(btn => {
+      btn.addEventListener('click', () => {
+        applyFormat(btn.dataset.cmd, btn.dataset.arg || null);
+      });
+    });
+
+    document.querySelectorAll(
+      '.sidebar [data-icon], .floating-fmt-toolbar [data-icon]'
+    ).forEach(btn => {
+      btn.addEventListener('click', () => {
+        insertIcon(btn.dataset.icon);
+      });
+    });
+  }
+
+  // Show the floating format toolbar whenever a rich-text editor has focus,
+  // hide it when focus moves outside both the toolbar and any editor. This
+  // avoids the user having to open the hamburger menu to apply formatting.
+  function setupFloatingFormatToolbar() {
+    const toolbar = document.getElementById('floatingFormatToolbar');
+    if (!toolbar) return;
+
+    const isEditable = (el) =>
+      el && el.classList && el.classList.contains('rich-text-editor');
+
+    const showToolbar = () => { toolbar.hidden = false; };
+    const hideToolbar = () => { toolbar.hidden = true; };
+
+    document.addEventListener('focusin', (e) => {
+      if (isEditable(e.target)) showToolbar();
+    });
+
+    // focusout fires before the next focusin. Defer the active-element check
+    // so we see where focus landed - if it's another editable or inside the
+    // toolbar itself, keep the toolbar visible.
+    document.addEventListener('focusout', () => {
+      setTimeout(() => {
+        const a = document.activeElement;
+        if (isEditable(a)) return;
+        if (a && toolbar.contains(a)) return;
+        hideToolbar();
+      }, 0);
+    });
+
+    // Click anywhere outside the toolbar AND outside any editor closes it.
+    // Covers the case where the user taps a non-focusable region (like a
+    // page background) where focusout might not fire reliably on all
+    // browsers.
+    document.addEventListener('mousedown', (e) => {
+      if (toolbar.hidden) return;
+      const t = e.target;
+      if (toolbar.contains(t)) return;
+      if (t && t.closest && t.closest('.rich-text-editor')) return;
+      hideToolbar();
+    });
+  }
+
+  // ---------- Sidebar collapse / expand (hamburger menu) ----------
+  // Bumped to v4 since the prior key persisted "open" defaults that no longer
+  // make sense for the hamburger model (we want it default-closed everywhere).
+  const SIDEBAR_STATE_KEY = 'workInstructionBuilder_v4_sidebar';
+
+  function setSidebarCollapsed(collapsed, persist) {
+    document.body.classList.toggle('sidebar-collapsed', !!collapsed);
+    const hamburgerBtn   = document.getElementById('hamburgerBtn');
+    const collapseBtn    = document.getElementById('sidebarCollapseBtn');
+    if (hamburgerBtn) {
+      hamburgerBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      hamburgerBtn.title = collapsed ? 'Open menu' : 'Close menu';
+    }
+    if (collapseBtn) {
+      collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+    if (persist) {
+      try {
+        localStorage.setItem(SIDEBAR_STATE_KEY, collapsed ? 'collapsed' : 'open');
+      } catch (e) {
+        // Ignore storage errors (private mode, quota, etc.) - the UI still works.
+      }
+    }
+  }
+
+  function toggleSidebar() {
+    const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+    setSidebarCollapsed(!isCollapsed, true);
+  }
+
+  function setupSidebarToggle() {
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const collapseBtn  = document.getElementById('sidebarCollapseBtn');
+    const backdrop     = document.getElementById('sidebarBackdrop');
+
+    if (hamburgerBtn) {
+      // preventDefault on mousedown so opening the menu doesn't steal focus
+      // (and consequently the selection range) from a contenteditable. Same
+      // trick used on the format buttons themselves - this just extends it
+      // to the hamburger so the chain "highlight text -> open menu -> click
+      // Bold" actually preserves the selection end to end.
+      hamburgerBtn.addEventListener('mousedown', (e) => e.preventDefault());
+      hamburgerBtn.addEventListener('click', toggleSidebar);
+    }
+    if (collapseBtn) {
+      collapseBtn.addEventListener('mousedown', (e) => e.preventDefault());
+      collapseBtn.addEventListener('click', () => setSidebarCollapsed(true, true));
+    }
+    // Backdrop click closes the menu (hamburger UX standard)
+    if (backdrop) {
+      backdrop.addEventListener('click', () => setSidebarCollapsed(true, true));
+    }
+    // Esc closes the menu when it's open
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.body.classList.contains('sidebar-collapsed')) {
+        setSidebarCollapsed(true, true);
+      }
+    });
+
+    // Always default to closed for the hamburger model. Persisted "open" only
+    // restores within the same session (closes again on next reload).
+    setSidebarCollapsed(true, false);
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+  }
+
+  // ---------- Mobile page-scale ----------
+  // Compute and apply a CSS scale so the 8.5in printed page fits within the
+  // current viewport width. The underlying layout stays at print dimensions.
+  function updatePageScale() {
+    const root = document.documentElement;
+    if (!isMobileViewport()) {
+      root.style.setProperty('--page-scale', '1');
+      root.style.setProperty('--page-margin-fix', '0px');
+      return;
+    }
+    // 8.5in at 96dpi = 816px. Subtract a small horizontal padding for breathing room.
+    const PAGE_WIDTH_PX = 816;
+    const available = Math.max(280, window.innerWidth - 16);
+    const scale = Math.min(1, available / PAGE_WIDTH_PX);
+    root.style.setProperty('--page-scale', scale.toFixed(4));
+    // Because we use transform: scale(), the element still occupies full
+    // unscaled height in the document flow. Compensate so subsequent pages
+    // don't have huge empty gaps below them.
+    // 11in at 96dpi = 1056px. Empty space below scaled page = 1056 * (1 - scale).
+    const PAGE_HEIGHT_PX = 1056;
+    const negativeMargin = -PAGE_HEIGHT_PX * (1 - scale);
+    root.style.setProperty('--page-margin-fix', negativeMargin.toFixed(0) + 'px');
+  }
+
+  function applyFormat(cmd, arg) {
+    // If the user has a multi-cell drag selection in a Chart (parts) block,
+    // apply the format to every selected cell instead of only the focused
+    // one. The selection survives the click because the format buttons use
+    // mousedown preventDefault.
+    if (partsCellSelection.size > 0) {
+      let appliedAny = false;
+      partsCellSelection.forEach((cells, blockId) => {
+        const blockEl = document.querySelector(
+          '.parts-block[data-block-id="' + blockId + '"]'
+        );
+        if (!blockEl) return;
+        cells.forEach(key => {
+          const [r, c] = key.split('-');
+          const cellEl = blockEl.querySelector(
+            '.parts-cell[data-parts-row="' + r + '"][data-parts-col="' + c + '"]'
+          );
+          if (!cellEl) return;
+          try {
+            // Programmatically select all of the cell's content, then run
+            // the same execCommand path so behaviour matches the single-cell
+            // case exactly (bold toggling, color spans, etc).
+            cellEl.focus();
+            const range = document.createRange();
+            range.selectNodeContents(cellEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('styleWithCSS', false, true);
+            document.execCommand(cmd, false, arg);
+            cellEl.dispatchEvent(new Event('input', { bubbles: true }));
+            appliedAny = true;
+          } catch (err) {
+            console.warn('Multi-cell format failed:', cmd, err);
+          }
+        });
+      });
+      if (appliedAny) {
+        // Restore the visual highlight - execCommand's selection moves
+        // wiped the .parts-cell-selected classes off the <td>s.
+        applyPartsSelectionVisual();
+        return;
+      }
+      // Fall through to single-cell path if nothing actually applied.
+    }
+    if (!lastFocusedEditable) {
+      showToast('Click into a text area first');
+      return;
+    }
+    try {
+      lastFocusedEditable.focus();
+      // styleWithCSS=true emits inline CSS instead of deprecated <font> tags.
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand(cmd, false, arg);
+      const evt = new Event('input', { bubbles: true });
+      lastFocusedEditable.dispatchEvent(evt);
+    } catch (err) {
+      console.warn('Format command failed:', cmd, err);
+    }
+  }
+
+  function insertIcon(type) {
+    const html = ICON_HTML[type];
+    if (!html) return;
+    if (!lastFocusedEditable) {
+      showToast('Click into a text area first');
+      return;
+    }
+    try {
+      lastFocusedEditable.focus();
+      document.execCommand('insertHTML', false, html + '&nbsp;');
+      const evt = new Event('input', { bubbles: true });
+      lastFocusedEditable.dispatchEvent(evt);
+    } catch (err) {
+      console.warn('Icon insert failed:', type, err);
+    }
+  }
+
+  // ---------- Color picker ----------
+  const COLOR_PRESETS = [
+    '#b85c58', '#c07080', '#d49098',
+    '#b87550', '#c08560', '#c89070',
+    '#b89840', '#c4a860', '#d0bc80',
+    '#477060', '#5e8a6a', '#7a9e85',
+    '#708c60', '#90a870', '#5a8e90',
+    '#6ea0a0', '#4e72a0', '#6888b0',
+    '#8898c8', '#826090', '#7870a8',
+    '#9888c0', '#a07898'
+  ];
+
+  function hideColorPicker() {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup) popup.remove();
+    document.removeEventListener('click', _colorPickerOutsideClick);
+  }
+
+  function _colorPickerOutsideClick(e) {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup && !popup.contains(e.target)) hideColorPicker();
+  }
+
+  function showColorPicker(block, anchorBtn) {
+    hideColorPicker();
+
+    const popup = document.createElement('div');
+    popup.id = 'colorPickerPopup';
+    popup.className = 'color-picker-popup no-print';
+
+    COLOR_PRESETS.forEach(color => {
+      const sw = document.createElement('button');
+      sw.className = 'cp-swatch';
+      sw.style.background = color;
+      sw.title = color;
+      if (block.color === color) {
+        sw.style.outline = '2px solid var(--navy)';
+        sw.style.outlineOffset = '1px';
+      }
+      sw.addEventListener('mousedown', e => e.preventDefault());
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        block.color = color;
+        saveState();
+        hideColorPicker();
+        render();
+      });
+      popup.appendChild(sw);
+    });
+
+    // Custom color row
+    const row = document.createElement('div');
+    row.className = 'cp-row';
+
+    const label = document.createElement('label');
+    label.textContent = 'Custom:';
+
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = block.color || '#4e72a0';
+    colorInput.addEventListener('mousedown', e => e.stopPropagation());
+    colorInput.addEventListener('input', () => {
+      // Live preview without full re-render
+      const blockEl = document.querySelector('[data-block-id="' + block.id + '"]');
+      if (blockEl) blockEl.style.setProperty('--callout-color', colorInput.value);
+    });
+    colorInput.addEventListener('change', () => {
+      block.color = colorInput.value;
+      saveState();
+      hideColorPicker();
+      render();
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'cp-reset';
+    resetBtn.textContent = '✕ Reset';
+    resetBtn.title = 'Remove custom color';
+    resetBtn.addEventListener('mousedown', e => e.preventDefault());
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      delete block.color;
+      saveState();
+      hideColorPicker();
+      render();
+    });
+
+    row.appendChild(label);
+    row.appendChild(colorInput);
+    row.appendChild(resetBtn);
+    popup.appendChild(row);
+
+    // Position near the button
+    const rect = anchorBtn.getBoundingClientRect();
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '10000';
+    // Prefer to align right edge of popup with right edge of button
+    const popupWidth = 148; // 6 * 22px + gaps + padding ≈ 148
+    let left = rect.right - popupWidth;
+    if (left < 4) left = 4;
+    popup.style.left = left + 'px';
+    popup.style.top = (rect.bottom + 4) + 'px';
+
+    document.body.appendChild(popup);
+    setTimeout(() => document.addEventListener('click', _colorPickerOutsideClick), 0);
+  }
+
+  // ---------- Drag and Drop ----------
+  function endDrag() {
+    document.body.classList.remove('is-dragging', 'is-dragging-sidebar', 'is-dragging-block');
+    const indicator = document.getElementById('dropIndicator');
+    if (indicator) indicator.style.display = 'none';
+    document.querySelectorAll('.block-dragging').forEach(el => el.classList.remove('block-dragging'));
+    _dragData = null;
+    _dragInsertIdx = -1;
+  }
+
+  // Given a clientY position over a content-area element, return the index
+  // in state.blocks where the dragged block should be inserted.
+  function calcDropInsertIdx(contentAreaEl, clientY) {
+    const rows = Array.from(contentAreaEl.querySelectorAll('.row[data-row-block-id]'));
+    if (rows.length === 0) return state.blocks.length;
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        const blockId = rows[i].dataset.rowBlockId;
+        const idx = findBlockIndex(blockId);
+        return idx >= 0 ? idx : 0;
+      }
+    }
+    // Below all rows
+    const lastId = rows[rows.length - 1].dataset.rowBlockId;
+    const lastIdx = findBlockIndex(lastId);
+    return lastIdx >= 0 ? lastIdx + 1 : state.blocks.length;
+  }
+
+  // Position the floating drop indicator line.
+  function positionDropIndicator(contentAreaEl, clientY) {
+    const indicator = document.getElementById('dropIndicator');
+    if (!indicator) return;
+    const rows = Array.from(contentAreaEl.querySelectorAll('.row[data-row-block-id]'));
+    const pageEl = contentAreaEl.closest('.page');
+    const pageRect = pageEl ? pageEl.getBoundingClientRect() : contentAreaEl.getBoundingClientRect();
+    let insertY;
+    if (rows.length === 0) {
+      insertY = contentAreaEl.getBoundingClientRect().top + 10;
+    } else {
+      let found = false;
+      for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          insertY = rect.top - 2;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const lastRect = rows[rows.length - 1].getBoundingClientRect();
+        insertY = lastRect.bottom + 2;
+      }
+    }
+    indicator.style.display = 'block';
+    indicator.style.top = insertY + 'px';
+    indicator.style.left = pageRect.left + 'px';
+    indicator.style.width = pageRect.width + 'px';
+  }
+
+  function setupDragAndDrop() {
+    // Track mousedown target so handle-only drag detection works
+    document.addEventListener('mousedown', (e) => { _lastMousedownEl = e.target; });
+
+    // Make sidebar insert buttons draggable
+    document.querySelectorAll('.sidebar [data-add]').forEach(btn => {
+      btn.setAttribute('draggable', 'true');
+      btn.addEventListener('dragstart', (e) => {
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('application/json', JSON.stringify({
+          source: 'sidebar',
+          add: btn.dataset.add,
+          kind: btn.dataset.kind || null
+        }));
+        _dragData = { source: 'sidebar', add: btn.dataset.add, kind: btn.dataset.kind || null };
+        document.body.classList.add('is-dragging', 'is-dragging-sidebar');
+      });
+      btn.addEventListener('dragend', endDrag);
+    });
+
+    // Global dragover - handle both sidebar and block drags over the page
+    document.addEventListener('dragover', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) {
+        // Not over a page - hide indicator
+        const indicator = document.getElementById('dropIndicator');
+        if (indicator) indicator.style.display = 'none';
+        return;
+      }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = _dragData.source === 'sidebar' ? 'copy' : 'move';
+      positionDropIndicator(contentArea, e.clientY);
+      _dragInsertIdx = calcDropInsertIdx(contentArea, e.clientY);
+    });
+
+    // Hide indicator when leaving a content area
+    document.addEventListener('dragleave', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) return;
+      if (!e.relatedTarget || !contentArea.contains(e.relatedTarget)) {
+        const indicator = document.getElementById('dropIndicator');
+        if (indicator) indicator.style.display = 'none';
+      }
+    });
+
+    // Global drop
+    document.addEventListener('drop', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) { endDrag(); return; }
+      e.preventDefault();
+
+      const insertIdx = (_dragInsertIdx >= 0) ? _dragInsertIdx : state.blocks.length;
+
+      if (_dragData.source === 'sidebar') {
+        let newBlock;
+        if (_dragData.add === 'step')          newBlock = createStepBlock();
+        else if (_dragData.add === 'callout')   newBlock = createCalloutBlock(_dragData.kind || 'note');
+        else if (_dragData.add === 'section')   newBlock = createSectionBlock();
+        else if (_dragData.add === 'parts')     newBlock = createPartsBlock();
+        else if (_dragData.add === 'photoarray') newBlock = createPhotoArrayBlock();
+        else if (_dragData.add === 'textbox')   newBlock = createTextBoxBlock();
+        if (newBlock) {
+          state.blocks.splice(insertIdx, 0, newBlock);
+          saveState();
+          focusBlockIdAfterRender = newBlock.id;
+          render();
+        }
+      } else if (_dragData.source === 'block') {
+        const fromIdx = findBlockIndex(_dragData.id);
+        if (fromIdx >= 0) {
+          // Adjust target index for the removal of the block from its original position
+          const toIdx = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
+          if (fromIdx !== toIdx) {
+            const [moved] = state.blocks.splice(fromIdx, 1);
+            state.blocks.splice(toIdx, 0, moved);
+            saveState();
+            focusBlockIdAfterRender = _dragData.id;
+            render();
+          }
+        }
+      }
+
+      endDrag();
+    });
+
+    // Cleanup on dragend anywhere (covers cases where drop fires elsewhere)
+    document.addEventListener('dragend', () => {
+      if (_dragData) endDrag();
+    });
+  }
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // ---------- Init ----------
+  window.exportTemplate = exportTemplate;
+  window.importTemplate = importTemplate;
+  window.newDocument = newDocument;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadState();
+    // Mark the body when running on a touch-primary device. Used by the
+    // print stylesheet to size pages differently: desktop keeps a fixed
+    // 11in page (footer at the bottom of the sheet), mobile uses
+    // content-driven height so iOS Safari's print headers don't push the
+    // footer onto a phantom second page.
+    try {
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        document.body.classList.add('is-touch');
+      }
+    } catch (e) { /* matchMedia missing on very old browsers - ignore */ }
+    render();
+    setupFocusTracking();
+    setupInlineIconRemoval();
+    setupBlockToolbar();
+    setupFormatToolbar();
+    setupFloatingFormatToolbar();
+    setupSidebarToggle();
+    setupDragAndDrop();
+    updatePageScale();
+  });
+
+  // Recompute scale on resize / orientation change.
+  let _resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (_resizeTimer) clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+      updatePageScale();
+    }, 120);
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(updatePageScale, 200);
+  });
+})();
+</script>
+
+</body>
+</html>
