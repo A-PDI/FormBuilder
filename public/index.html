@@ -1458,6 +1458,79 @@
        see what's about to appear. */
     .block-controls button.add-title:hover { background: var(--color-cobalt); }
 
+    /* ---------- Drag and Drop ---------- */
+    .drop-indicator {
+      position: fixed;
+      height: 3px;
+      background: var(--color-cobalt);
+      pointer-events: none;
+      z-index: 600;
+      display: none;
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(78,114,160,0.55);
+    }
+    body.is-dragging .drop-indicator { display: block; }
+    .block-dragging { opacity: 0.35; }
+    .block-drag-handle {
+      cursor: grab !important;
+      font-size: 13px !important;
+      letter-spacing: -1px;
+    }
+    .block-drag-handle:active { cursor: grabbing !important; }
+
+    /* ---------- Color picker popup ---------- */
+    .color-picker-popup {
+      background: white;
+      border: 1px solid var(--steel);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(6, 22px);
+      gap: 4px;
+    }
+    .color-picker-popup .cp-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .color-picker-popup .cp-swatch:hover {
+      border-color: var(--navy);
+      transform: scale(1.12);
+    }
+    .color-picker-popup .cp-row {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px solid var(--frost);
+      margin-top: 2px;
+    }
+    .color-picker-popup .cp-row label {
+      font-size: 10px; color: var(--charcoal); font-weight: 600;
+    }
+    .color-picker-popup .cp-row input[type=color] {
+      width: 30px; height: 22px;
+      border: 1px solid var(--steel); border-radius: 3px;
+      padding: 1px; cursor: pointer;
+    }
+    .color-picker-popup .cp-reset {
+      font-size: 10px; padding: 2px 7px;
+      border: 1px solid var(--steel); background: white;
+      border-radius: 3px; cursor: pointer;
+      font-family: inherit; color: var(--danger);
+      margin-left: auto;
+    }
+    .color-picker-popup .cp-reset:hover { border-color: var(--danger); }
+    .block-controls button.paint-btn { font-size: 11px; }
+    .block-controls button.paint-btn:hover { background: rgba(90,142,144,0.9); }
+
     /* ---------- Empty state ---------- */
     .empty-state {
       flex: 1;
@@ -1826,6 +1899,7 @@
 
 <div id="pagesContainer" class="pages-container"></div>
 <div id="toast" class="toast no-print"></div>
+<div class="drop-indicator no-print" id="dropIndicator"></div>
 
 <script>
 (function () {
@@ -1964,6 +2038,11 @@
   //   partsDrag: drag-in-progress state; null when idle.
   const partsCellSelection = new Map();
   let partsDrag = null;
+
+  // Drag-and-drop state
+  let _dragData = null;
+  let _dragInsertIdx = -1;
+  let _lastMousedownEl = null;
 
   function genId() {
     _idCounter += 1;
@@ -2252,6 +2331,9 @@
       } else if (b.type === 'callout') {
         if (!CALLOUT_KINDS[b.kind]) b.kind = 'note';
         if (typeof b.text !== 'string') b.text = '';
+        if (typeof b.color !== 'string' || !/^#[0-9a-fA-F]{3,8}$/.test(b.color)) {
+          delete b.color;
+        }
       } else if (b.type === 'section') {
         if (typeof b.text !== 'string') b.text = '';
       } else if (b.type === 'parts') {
@@ -3010,24 +3092,28 @@
     if (row.type === 'callout') {
       const el = document.createElement('div');
       el.className = 'row row-callout';
+      el.dataset.rowBlockId = row.block.id;
       el.appendChild(buildCalloutElement(row.block));
       return el;
     }
     if (row.type === 'section') {
       const el = document.createElement('div');
       el.className = 'row row-section';
+      el.dataset.rowBlockId = row.block.id;
       el.appendChild(buildSectionElement(row.block));
       return el;
     }
     if (row.type === 'parts') {
       const el = document.createElement('div');
       el.className = 'row row-parts';
+      el.dataset.rowBlockId = row.block.id;
       el.appendChild(buildPartsElement(row.block));
       return el;
     }
     if (row.type === 'photoarraychunk') {
       const el = document.createElement('div');
       el.className = 'row row-photoarray';
+      el.dataset.rowBlockId = row.block.id;
       // Optional title bar above the photo grid. Only on the FIRST chunk -
       // a multi-page photo array shouldn't repeat its title on every page.
       if (row.isFirstChunk && typeof row.block.title === 'string') {
@@ -3045,6 +3131,7 @@
       // any caller that bypassed blocksToRows expansion.
       const el = document.createElement('div');
       el.className = 'row row-photoarray';
+      el.dataset.rowBlockId = row.block.id;
       if (typeof row.block.title === 'string') {
         el.appendChild(buildBlockTitleBar(row.block));
       }
@@ -3054,12 +3141,14 @@
     if (row.type === 'textbox') {
       const el = document.createElement('div');
       el.className = 'row row-textbox';
+      el.dataset.rowBlockId = row.block.id;
       el.appendChild(buildTextBoxElement(row.block));
       return el;
     }
     // step
     const el = document.createElement('div');
     el.className = 'row row-step';
+    el.dataset.rowBlockId = row.block.id;
     if (typeof row.block.title === 'string') {
       el.appendChild(buildBlockTitleBar(row.block));
     }
@@ -4063,6 +4152,9 @@
     const el = document.createElement('div');
     el.className = 'callout callout-' + (CALLOUT_KINDS[block.kind] ? block.kind : 'note');
     el.dataset.blockId = block.id;
+    if (block.color) {
+      el.style.setProperty('--callout-color', block.color);
+    }
 
     const badge = document.createElement('div');
     badge.className = 'callout-badge';
@@ -4118,6 +4210,28 @@
     const wrap = document.createElement('div');
     wrap.className = 'block-controls no-print';
 
+    // Drag handle - initiates block reorder drag
+    const handle = document.createElement('button');
+    handle.textContent = '☰';  // ☰ grip icon
+    handle.title = 'Drag to reorder';
+    handle.className = 'block-drag-handle';
+    handle.setAttribute('draggable', 'true');
+    handle.addEventListener('mousedown', (e) => e.stopPropagation());
+    handle.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/json', JSON.stringify({ source: 'block', id: block.id }));
+      _dragData = { source: 'block', id: block.id };
+      document.body.classList.add('is-dragging', 'is-dragging-block');
+      // Visually dim the block being dragged
+      const blockEl = handle.closest('[data-block-id]');
+      if (blockEl) {
+        setTimeout(() => blockEl.classList.add('block-dragging'), 0);
+      }
+    });
+    handle.addEventListener('dragend', endDrag);
+    wrap.appendChild(handle);
+
     // Optional title bar toggle. Only step (Image|Text) and photoarray
     // blocks support a title; the button is only offered when the block
     // doesn't already have one (the title bar itself has its own ✕ for
@@ -4133,6 +4247,21 @@
         addBlockTitle(block.id);
       });
       wrap.appendChild(titleBtn);
+    }
+
+    // Color picker - callout blocks only
+    if (block.type === 'callout') {
+      const paintBtn = document.createElement('button');
+      paintBtn.title = 'Change color';
+      paintBtn.className = 'paint-btn';
+      paintBtn.textContent = '▣';  // ▣ filled square (color indicator)
+      if (block.color) paintBtn.style.color = block.color;
+      paintBtn.addEventListener('mousedown', (e) => e.preventDefault());
+      paintBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showColorPicker(block, paintBtn);
+      });
+      wrap.appendChild(paintBtn);
     }
 
     const upBtn = document.createElement('button');
@@ -4422,10 +4551,6 @@
     }
     saveState();
     focusBlockIdAfterRender = newBlock.id;
-    // Collapse the hamburger menu so the user can immediately interact with
-    // the new block. We don't persist this — if they explicitly opened the
-    // menu, they may want it open again on next reload.
-    setSidebarCollapsed(true, false);
     render();
   }
 
@@ -4841,6 +4966,266 @@
     }
   }
 
+  // ---------- Color picker ----------
+  const COLOR_PRESETS = [
+    '#b85c58', '#c07080', '#d49098',
+    '#b87550', '#c08560', '#c89070',
+    '#b89840', '#c4a860', '#d0bc80',
+    '#477060', '#5e8a6a', '#7a9e85',
+    '#708c60', '#90a870', '#5a8e90',
+    '#6ea0a0', '#4e72a0', '#6888b0',
+    '#8898c8', '#826090', '#7870a8',
+    '#9888c0', '#a07898'
+  ];
+
+  function hideColorPicker() {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup) popup.remove();
+    document.removeEventListener('click', _colorPickerOutsideClick);
+  }
+
+  function _colorPickerOutsideClick(e) {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup && !popup.contains(e.target)) hideColorPicker();
+  }
+
+  function showColorPicker(block, anchorBtn) {
+    hideColorPicker();
+
+    const popup = document.createElement('div');
+    popup.id = 'colorPickerPopup';
+    popup.className = 'color-picker-popup no-print';
+
+    COLOR_PRESETS.forEach(color => {
+      const sw = document.createElement('button');
+      sw.className = 'cp-swatch';
+      sw.style.background = color;
+      sw.title = color;
+      if (block.color === color) {
+        sw.style.outline = '2px solid var(--navy)';
+        sw.style.outlineOffset = '1px';
+      }
+      sw.addEventListener('mousedown', e => e.preventDefault());
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        block.color = color;
+        saveState();
+        hideColorPicker();
+        render();
+      });
+      popup.appendChild(sw);
+    });
+
+    // Custom color row
+    const row = document.createElement('div');
+    row.className = 'cp-row';
+
+    const label = document.createElement('label');
+    label.textContent = 'Custom:';
+
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = block.color || '#4e72a0';
+    colorInput.addEventListener('mousedown', e => e.stopPropagation());
+    colorInput.addEventListener('input', () => {
+      // Live preview without full re-render
+      const blockEl = document.querySelector('[data-block-id="' + block.id + '"]');
+      if (blockEl) blockEl.style.setProperty('--callout-color', colorInput.value);
+    });
+    colorInput.addEventListener('change', () => {
+      block.color = colorInput.value;
+      saveState();
+      hideColorPicker();
+      render();
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'cp-reset';
+    resetBtn.textContent = '✕ Reset';
+    resetBtn.title = 'Remove custom color';
+    resetBtn.addEventListener('mousedown', e => e.preventDefault());
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      delete block.color;
+      saveState();
+      hideColorPicker();
+      render();
+    });
+
+    row.appendChild(label);
+    row.appendChild(colorInput);
+    row.appendChild(resetBtn);
+    popup.appendChild(row);
+
+    // Position near the button
+    const rect = anchorBtn.getBoundingClientRect();
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '10000';
+    // Prefer to align right edge of popup with right edge of button
+    const popupWidth = 148; // 6 * 22px + gaps + padding ≈ 148
+    let left = rect.right - popupWidth;
+    if (left < 4) left = 4;
+    popup.style.left = left + 'px';
+    popup.style.top = (rect.bottom + 4) + 'px';
+
+    document.body.appendChild(popup);
+    setTimeout(() => document.addEventListener('click', _colorPickerOutsideClick), 0);
+  }
+
+  // ---------- Drag and Drop ----------
+  function endDrag() {
+    document.body.classList.remove('is-dragging', 'is-dragging-sidebar', 'is-dragging-block');
+    const indicator = document.getElementById('dropIndicator');
+    if (indicator) indicator.style.display = 'none';
+    document.querySelectorAll('.block-dragging').forEach(el => el.classList.remove('block-dragging'));
+    _dragData = null;
+    _dragInsertIdx = -1;
+  }
+
+  // Given a clientY position over a content-area element, return the index
+  // in state.blocks where the dragged block should be inserted.
+  function calcDropInsertIdx(contentAreaEl, clientY) {
+    const rows = Array.from(contentAreaEl.querySelectorAll('.row[data-row-block-id]'));
+    if (rows.length === 0) return state.blocks.length;
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        const blockId = rows[i].dataset.rowBlockId;
+        const idx = findBlockIndex(blockId);
+        return idx >= 0 ? idx : 0;
+      }
+    }
+    // Below all rows
+    const lastId = rows[rows.length - 1].dataset.rowBlockId;
+    const lastIdx = findBlockIndex(lastId);
+    return lastIdx >= 0 ? lastIdx + 1 : state.blocks.length;
+  }
+
+  // Position the floating drop indicator line.
+  function positionDropIndicator(contentAreaEl, clientY) {
+    const indicator = document.getElementById('dropIndicator');
+    if (!indicator) return;
+    const rows = Array.from(contentAreaEl.querySelectorAll('.row[data-row-block-id]'));
+    const pageEl = contentAreaEl.closest('.page');
+    const pageRect = pageEl ? pageEl.getBoundingClientRect() : contentAreaEl.getBoundingClientRect();
+    let insertY;
+    if (rows.length === 0) {
+      insertY = contentAreaEl.getBoundingClientRect().top + 10;
+    } else {
+      let found = false;
+      for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          insertY = rect.top - 2;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const lastRect = rows[rows.length - 1].getBoundingClientRect();
+        insertY = lastRect.bottom + 2;
+      }
+    }
+    indicator.style.display = 'block';
+    indicator.style.top = insertY + 'px';
+    indicator.style.left = pageRect.left + 'px';
+    indicator.style.width = pageRect.width + 'px';
+  }
+
+  function setupDragAndDrop() {
+    // Track mousedown target so handle-only drag detection works
+    document.addEventListener('mousedown', (e) => { _lastMousedownEl = e.target; });
+
+    // Make sidebar insert buttons draggable
+    document.querySelectorAll('.sidebar [data-add]').forEach(btn => {
+      btn.setAttribute('draggable', 'true');
+      btn.addEventListener('dragstart', (e) => {
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('application/json', JSON.stringify({
+          source: 'sidebar',
+          add: btn.dataset.add,
+          kind: btn.dataset.kind || null
+        }));
+        _dragData = { source: 'sidebar', add: btn.dataset.add, kind: btn.dataset.kind || null };
+        document.body.classList.add('is-dragging', 'is-dragging-sidebar');
+      });
+      btn.addEventListener('dragend', endDrag);
+    });
+
+    // Global dragover - handle both sidebar and block drags over the page
+    document.addEventListener('dragover', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) {
+        // Not over a page - hide indicator
+        const indicator = document.getElementById('dropIndicator');
+        if (indicator) indicator.style.display = 'none';
+        return;
+      }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = _dragData.source === 'sidebar' ? 'copy' : 'move';
+      positionDropIndicator(contentArea, e.clientY);
+      _dragInsertIdx = calcDropInsertIdx(contentArea, e.clientY);
+    });
+
+    // Hide indicator when leaving a content area
+    document.addEventListener('dragleave', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) return;
+      if (!e.relatedTarget || !contentArea.contains(e.relatedTarget)) {
+        const indicator = document.getElementById('dropIndicator');
+        if (indicator) indicator.style.display = 'none';
+      }
+    });
+
+    // Global drop
+    document.addEventListener('drop', (e) => {
+      if (!_dragData) return;
+      const contentArea = e.target.closest && e.target.closest('.content-area');
+      if (!contentArea) { endDrag(); return; }
+      e.preventDefault();
+
+      const insertIdx = (_dragInsertIdx >= 0) ? _dragInsertIdx : state.blocks.length;
+
+      if (_dragData.source === 'sidebar') {
+        let newBlock;
+        if (_dragData.add === 'step')          newBlock = createStepBlock();
+        else if (_dragData.add === 'callout')   newBlock = createCalloutBlock(_dragData.kind || 'note');
+        else if (_dragData.add === 'section')   newBlock = createSectionBlock();
+        else if (_dragData.add === 'parts')     newBlock = createPartsBlock();
+        else if (_dragData.add === 'photoarray') newBlock = createPhotoArrayBlock();
+        else if (_dragData.add === 'textbox')   newBlock = createTextBoxBlock();
+        if (newBlock) {
+          state.blocks.splice(insertIdx, 0, newBlock);
+          saveState();
+          focusBlockIdAfterRender = newBlock.id;
+          render();
+        }
+      } else if (_dragData.source === 'block') {
+        const fromIdx = findBlockIndex(_dragData.id);
+        if (fromIdx >= 0) {
+          // Adjust target index for the removal of the block from its original position
+          const toIdx = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
+          if (fromIdx !== toIdx) {
+            const [moved] = state.blocks.splice(fromIdx, 1);
+            state.blocks.splice(toIdx, 0, moved);
+            saveState();
+            focusBlockIdAfterRender = _dragData.id;
+            render();
+          }
+        }
+      }
+
+      endDrag();
+    });
+
+    // Cleanup on dragend anywhere (covers cases where drop fires elsewhere)
+    document.addEventListener('dragend', () => {
+      if (_dragData) endDrag();
+    });
+  }
+
   // ---------- Toast ----------
   let toastTimer = null;
   function showToast(msg) {
@@ -4876,6 +5261,7 @@
     setupFormatToolbar();
     setupFloatingFormatToolbar();
     setupSidebarToggle();
+    setupDragAndDrop();
     updatePageScale();
   });
 
