@@ -17,36 +17,36 @@
       --charcoal: #595959;
       --white:    #FFFFFF;
       --dew:      #d0d7e3;
-      /* Reds */
-      --color-ember:    #b85c58;
-      --color-rose:     #c07080;
-      --color-blush:    #d49098;
+      /* Reds / Magentas (Microsoft Fluent) */
+      --color-ember:    #D13438;
+      --color-rose:     #E3008C;
+      --color-blush:    #C239B3;
       /* Oranges */
-      --color-rust:     #b87550;
-      --color-clay:     #c08560;
-      --color-terra:    #c89070;
-      /* Yellows */
-      --color-gold:     #b89840;
-      --color-straw:    #c4a860;
-      --color-flax:     #d0bc80;
+      --color-rust:     #CA5010;
+      --color-clay:     #DA3B01;
+      --color-terra:    #F7630C;
+      /* Ambers / Golds */
+      --color-gold:     #8A6B00;
+      --color-straw:    #C19C00;
+      --color-flax:     #FFB900;
       /* Greens */
-      --color-pine:     #477060;
-      --color-fern:     #5e8a6a;
-      --color-sage:     #7a9e85;
-      --color-moss:     #708c60;
-      --color-reed:     #90a870;
+      --color-pine:     #004B1C;
+      --color-fern:     #107C10;
+      --color-sage:     #498205;
+      --color-moss:     #00CC6A;
+      --color-reed:     #00B294;
       /* Teals */
-      --color-teal:     #5a8e90;
-      --color-seafoam:  #6ea0a0;
+      --color-teal:     #008272;
+      --color-seafoam:  #00B294;
       /* Blues */
-      --color-cobalt:     #4e72a0;
-      --color-sky:        #6888b0;
-      --color-periwinkle: #8898c8;
-      /* Violets */
-      --color-plum:     #826090;
-      --color-iris:     #7870a8;
-      --color-lavender: #9888c0;
-      --color-mauve:    #a07898;
+      --color-cobalt:     #0078D4;
+      --color-sky:        #0099BC;
+      --color-periwinkle: #004E8C;
+      /* Purples */
+      --color-plum:     #5C2D91;
+      --color-iris:     #8764B8;
+      --color-lavender: #32145A;
+      --color-mauve:    #B4009E;
       /* Legacy palette */
       --danger:   #b3261e;
       --success:  #2e7d32;
@@ -311,7 +311,7 @@
     .parts-table { width: 100%; border-collapse: collapse; table-layout: auto; }
     .parts-table thead th { background: #eef0f3; border: 1px solid var(--steel); padding: 0; text-align: left; vertical-align: middle; position: relative; print-color-adjust: exact; }
     .parts-table tbody td { border: 1px solid var(--steel); padding: 0; vertical-align: middle; position: relative; }
-    .parts-table tbody td.parts-cell-selected { background: rgba(78, 114, 160, 0.18); box-shadow: inset 0 0 0 1px var(--color-cobalt); }
+    .parts-table tbody td.parts-cell-selected { background: rgba(0, 120, 212, 0.18); box-shadow: inset 0 0 0 1px var(--color-cobalt); }
     .parts-table tbody td.parts-cell-selected .parts-cell { background: transparent; }
     .parts-cell { outline: none; cursor: text; padding: 4px 8px; min-height: 18px; font-size: 10.5px; line-height: 1.3; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .parts-cell:focus { background: var(--frost); white-space: normal; overflow: visible; text-overflow: clip; }
@@ -803,6 +803,7 @@
 
   function buildCalloutElement(block) {
     const el = document.createElement('div'); el.className = 'callout callout-' + block.kind; el.dataset.blockId = block.id;
+    if (block.color) el.style.setProperty('--callout-color', block.color);
     el.innerHTML = `<div class="callout-badge">${block.kind.toUpperCase()}</div>
                     <div class="callout-text rich-text-editor" contenteditable="true">${block.text || ''}</div>`;
     el.querySelector('.callout-text').oninput = (e) => { block.text = e.target.innerHTML; saveState(); };
@@ -925,10 +926,16 @@
   function newDocument() { if (confirm('Clear template?')) { state = createEmptyState(); saveState(); render(); } }
 
   const COLOR_PRESETS = [
-    '#b85c58', '#c07080', '#d49098', '#b87550', '#c08560', '#c89070',
-    '#b89840', '#c4a860', '#d0bc80', '#477060', '#5e8a6a', '#7a9e85',
-    '#708c60', '#90a870', '#5a8e90', '#6ea0a0', '#4e72a0', '#6888b0',
-    '#8898c8', '#826090', '#7870a8', '#9888c0', '#a07898'
+    /* Reds / Magentas */
+    '#D13438', '#E3008C', '#C239B3', '#B4009E', '#5C2D91', '#32145A',
+    /* Blues */
+    '#003366', '#004E8C', '#0078D4', '#0099BC', '#008272', '#00B294',
+    /* Greens */
+    '#004B1C', '#107C10', '#498205', '#00CC6A',
+    /* Oranges / Ambers */
+    '#DA3B01', '#CA5010', '#F7630C', '#FFB900', '#C19C00', '#8A6B00',
+    /* Browns */
+    '#7A4100', '#5D4037',
   ];
 
   window.exportTemplate = exportTemplate; window.importTemplate = importTemplate; window.newDocument = newDocument;
