@@ -53,7 +53,7 @@
       --info:     #1565c0;
       --amber:    #f4b400;
       --orange:   #e67e22;
-      --purple:   --color-lavender;
+      --purple:   #5d3fd3;
       --teal:     #00695c;
       --cyan:     #0288d1;
       --magenta:  #ad1457;
@@ -65,19 +65,19 @@
       font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
       background: #d4d7dc;
       color: var(--charcoal);
-      transition: padding-left 0.2s ease;
+      transition: padding-left 0.18s ease;
     }
 
-    /* ---------- Layout Base ---------- */
+    /* ---------- Layout (Statically Open Side-by-Side by Default) ---------- */
     body {
       padding-top: calc(48px + env(safe-area-inset-top, 0px));
-      padding-left: 300px; /* Static non-overlay structure by default on desktop */
+      padding-left: 300px;
     }
     body.sidebar-collapsed {
       padding-left: 0;
     }
 
-    /* ---------- Top bar ---------- */
+    /* ---------- Top bar (file ops) ---------- */
     .topbar {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -88,27 +88,11 @@
       display: flex;
       gap: 8px;
       align-items: center;
-      z-index: 240; /* Above sidebar */
+      z-index: 240;
       box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     }
-    .topbar h1 {
-      margin: 0 14px 0 0;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    .topbar button {
-      padding: 7px 13px;
-      border: none;
-      background: var(--steel);
-      color: var(--navy);
-      cursor: pointer;
-      border-radius: 3px;
-      font-weight: 600;
-      font-size: 13px;
-      font-family: inherit;
-      transition: background 0.15s;
-    }
+    .topbar h1 { margin: 0 14px 0 0; font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
+    .topbar button { padding: 7px 13px; border: none; background: var(--steel); color: var(--navy); cursor: pointer; border-radius: 3px; font-weight: 600; font-size: 13px; font-family: inherit; transition: background 0.15s; }
     .topbar button:hover { background: var(--frost); }
     .topbar button.primary { background: var(--success); color: white; }
     .topbar button.primary:hover { background: #3a8e3f; }
@@ -116,173 +100,54 @@
     .topbar .hint { font-size: 12px; opacity: 0.85; }
     .topbar .btn-label-short { display: none; }
 
-    /* ---------- Hamburger button ---------- */
+    /* ---------- Hamburger button (in topbar) ---------- */
     .topbar .hamburger-btn {
-      background: transparent;
-      color: white;
-      border: 1px solid rgba(255,255,255,0.35);
-      width: 38px;
-      height: 36px;
-      padding: 0;
-      margin-right: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border-radius: 4px;
-      flex-shrink: 0;
+      background: transparent; color: white; border: 1px solid rgba(255,255,255,0.35); width: 38px; height: 36px; padding: 0; margin-right: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; flex-shrink: 0;
     }
-    .topbar .hamburger-btn:hover {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.6);
-    }
-    .topbar .hamburger-btn .hamburger-icon {
-      position: relative;
-      display: inline-block;
-      width: 18px;
-      height: 14px;
-    }
+    .topbar .hamburger-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.6); }
+    .topbar .hamburger-btn .hamburger-icon { position: relative; display: inline-block; width: 18px; height: 14px; }
     .topbar .hamburger-btn .hamburger-icon::before,
     .topbar .hamburger-btn .hamburger-icon::after,
-    .topbar .hamburger-btn .hamburger-icon > span {
-      content: '';
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: white;
-      border-radius: 1px;
-      transition: transform 0.18s ease, opacity 0.18s ease, top 0.18s ease;
-    }
+    .topbar .hamburger-btn .hamburger-icon > span { content: ''; position: absolute; left: 0; width: 100%; height: 2px; background: white; border-radius: 1px; transition: transform 0.18s ease, opacity 0.18s ease, top 0.18s ease; }
     .topbar .hamburger-btn .hamburger-icon::before { top: 0; }
     .topbar .hamburger-btn .hamburger-icon > span { top: 6px; }
     .topbar .hamburger-btn .hamburger-icon::after  { top: 12px; }
     
-    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::before {
-      top: 6px; transform: rotate(45deg);
-    }
-    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::after {
-      top: 6px; transform: rotate(-45deg);
-    }
-    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon > span {
-      opacity: 0;
-    }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::before { top: 6px; transform: rotate(45deg); }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon::after { top: 6px; transform: rotate(-45deg); }
+    body:not(.sidebar-collapsed) .topbar .hamburger-btn .hamburger-icon > span { opacity: 0; }
 
-    /* ---------- Sidebar Base Layout ---------- */
+    /* ---------- Sidebar Panel ---------- */
     .sidebar {
       position: fixed;
       top: calc(48px + env(safe-area-inset-top, 0px));
-      left: 0;
-      bottom: 0;
-      width: 300px;
-      background: #f1f3f7;
-      border-right: 1px solid var(--steel);
-      overflow-y: auto;
-      overflow-x: hidden;
-      z-index: 220;
-      display: flex;
-      flex-direction: column;
-      transform-origin: top left;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+      left: 0; bottom: 0; width: 300px; max-width: 88vw;
+      background: #f1f3f7; border-right: 1px solid var(--steel);
+      overflow-y: auto; overflow-x: hidden; z-index: 220;
+      display: flex; flex-direction: column; transform-origin: top left;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+      box-shadow: 4px 6px 18px rgba(0,0,0,0.12);
     }
-    body.sidebar-collapsed .sidebar {
-      transform: translateX(-100%);
-      opacity: 0;
-      pointer-events: none;
-    }
+    body.sidebar-collapsed .sidebar { transform: translateX(-100%); opacity: 0; pointer-events: none; }
 
-    /* Backdrop on desktop is inactive to allow parallel sheet modification */
+    /* Backdrop is purely a visual block option hidden on desktop configs */
     .sidebar-backdrop {
-      position: fixed;
-      top: calc(48px + env(safe-area-inset-top, 0px));
-      left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.25);
-      z-index: 210;
-      opacity: 1;
-      display: none; /* Inactive on full screens */
-      transition: opacity 0.18s ease;
+      position: fixed; top: calc(48px + env(safe-area-inset-top, 0px)); left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.28); z-index: 210; opacity: 1; display: none; transition: opacity 0.18s ease;
     }
-    
-    .sidebar-header {
-      position: sticky;
-      top: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 10px 6px 14px;
-      background: var(--frost);
-      border-bottom: 1px solid var(--steel);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--charcoal);
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      z-index: 1;
-    }
-    .sidebar-toggle {
-      background: white;
-      border: 1px solid var(--steel);
-      color: var(--charcoal);
-      cursor: pointer;
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      border-radius: 3px;
-      font-size: 16px;
-      font-family: inherit;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .sidebar-toggle:hover { background: var(--frost); border-color: var(--navy); }
-    .sidebar-section {
-      padding: 12px 14px 14px;
-      border-bottom: 1px solid var(--steel);
-    }
-    .sidebar-section:last-child { border-bottom: none; }
-    .sidebar-section h3 {
-      margin: 0 0 8px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--charcoal);
-    }
-    .sidebar-section h4 {
-      margin: 12px 0 6px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--charcoal);
-      opacity: 0.85;
-    }
+    body:not(.sidebar-collapsed) .sidebar-backdrop { display: none; }
 
-    .sidebar-block-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .sidebar-block-list button {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--steel);
-      background: white;
-      color: var(--charcoal);
-      cursor: pointer;
-      border-radius: 3px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      text-align: left;
-      letter-spacing: 0.3px;
-    }
-    .sidebar-block-list button:hover {
-      filter: brightness(1.07);
-      border-color: var(--navy);
-    }
+    .sidebar-header { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 14px; background: var(--frost); border-bottom: 1px solid var(--steel); font-size: 11px; font-weight: 700; color: var(--charcoal); letter-spacing: 0.6px; text-transform: uppercase; z-index: 1; }
+    .sidebar-toggle { background: white; border: 1px solid var(--steel); color: var(--charcoal); cursor: pointer; width: 26px; height: 26px; padding: 0; border-radius: 3px; font-size: 16px; font-family: inherit; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    .sidebar-toggle:hover { background: var(--frost); border-color: var(--navy); }
+    .sidebar-section { padding: 12px 14px 14px; border-bottom: 1px solid var(--steel); }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-section h3 { margin: 0 0 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--charcoal); }
+    .sidebar-section h4 { margin: 12px 0 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--charcoal); opacity: 0.85; }
+
+    .sidebar-block-list { display: flex; flex-direction: column; gap: 6px; }
+    .sidebar-block-list button { width: 100%; padding: 8px 10px; border: 1px solid var(--steel); background: white; color: var(--charcoal); cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; letter-spacing: 0.3px; }
+    .sidebar-block-list button:hover { filter: brightness(1.07); border-color: var(--navy); }
     .sidebar-block-list .add-step { background: #e8eaed; color: var(--charcoal); border-color: #c8ccd1; }
     .sidebar-block-list .add-warning  { background: var(--color-ember);   color: white; border-color: var(--color-ember); }
     .sidebar-block-list .add-caution  { background: var(--color-gold);    color: white; border-color: var(--color-gold); }
@@ -296,7 +161,7 @@
     .sidebar-block-list .add-finding  { background: var(--color-fern);    color: white; border-color: var(--color-fern); }
     .sidebar-block-list .add-concern  { background: var(--color-rose);    color: white; border-color: var(--color-rose); }
     .sidebar-block-list .add-analysis { background: var(--color-iris);    color: white; border-color: var(--color-iris); }
-    .sidebar-block-list .add-parts    { background: var(--color-cobalt);  color: white; border-color: var(--color-cobalt); }
+    .sidebar-block-list .add-parts { background: var(--color-cobalt); color: white; border-color: var(--color-cobalt); }
     .sidebar-block-list .add-photoarray { background: #d8dde4; color: var(--charcoal); border-color: #b8c0cc; }
     .sidebar-block-list .add-textbox { background: white; color: var(--charcoal); border: 1px dashed var(--steel); font-weight: 500; font-style: italic; }
     .sidebar-block-list .add-section { background: white; color: var(--navy); border-color: var(--navy); border-width: 2px; font-weight: 800; letter-spacing: 0.4px; }
@@ -322,7 +187,6 @@
     .sidebar-icon-grid .fmt-icon-caution { background: var(--amber);  color: #2c1f00; border-color: #d99e00; }
     .sidebar-icon-grid .fmt-icon-inspect { background: var(--info);   color: white; border-color: var(--info); }
     .sidebar-icon-grid .fmt-icon-torque  { background: #424242;       color: white; border-color: #424242; }
-
     .sidebar-clear-btn { width: 100%; margin-top: 10px; padding: 6px 8px; border: 1px solid var(--steel); background: white; color: var(--charcoal); cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 11px; font-weight: 600; }
     .sidebar-clear-btn:hover { border-color: var(--navy); }
 
@@ -369,7 +233,6 @@
     .title-row { display: flex; align-items: center; gap: 12px; }
     .title-field { font-size: 22px; font-weight: 700; color: var(--navy); border: none; flex: 1; min-width: 0; outline: none; font-family: inherit; padding: 1px 0; background: transparent; }
     .title-field::placeholder { color: var(--steel); font-style: italic; font-weight: 500; }
-
     .form-type-selector { display: flex; align-items: center; gap: 6px; font-size: 11px; flex-shrink: 0; }
     .form-type-selector label { color: var(--charcoal); font-weight: 600; white-space: nowrap; }
     .form-type-select { font-family: inherit; font-size: 11px; padding: 3px 6px; border: 1px solid var(--steel); border-radius: 3px; background: white; color: var(--charcoal); cursor: pointer; }
@@ -392,14 +255,15 @@
     .row-photoarray { flex: 0 0 auto; min-height: 2.60in; }
     .row-textbox { flex: 0 0 auto; min-height: 0.50in; }
 
-    /* ---------- Visual Block Modifiers (Dynamic Core Borders/Backgrounds) ---------- */
-    .step { border: 1.5px solid var(--block-color, var(--navy)); border-radius: 3px; padding: 4px 5px; display: flex; flex-direction: row; gap: 6px; position: relative; background: white; height: 2.15in; }
+    /* ---------- Universal Block Custom Properties ---------- */
+    .step { border: 1.5px solid var(--block-color, var(--navy)); border-radius: 3px; padding: 4px 5px; display: flex; flex-direction: row; gap: 6px; overflow: visible; position: relative; background: white; height: 2.15in; }
     .step-number { background: var(--block-color, var(--navy)); color: white; min-width: 22px; height: 18px; padding: 0 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; position: absolute; top: -10px; left: 4px; border-radius: 3px; letter-spacing: 0.3px; box-shadow: 0 1px 2px rgba(0,0,0,0.18); print-color-adjust: exact; z-index: 2; }
     
     .parts-block { background: white; border: 1.5px solid var(--block-color, var(--color-cobalt)); border-radius: 3px; position: relative; overflow: visible; print-color-adjust: exact; }
     .parts-header { background: var(--block-color, var(--color-cobalt)); color: white; font-weight: 700; font-size: 12px; letter-spacing: 0.6px; padding: 4px 12px; display: flex; align-items: center; print-color-adjust: exact; }
 
     .block-title-bar { background: var(--block-color, var(--color-cobalt)); color: white; font-weight: 700; font-size: 12px; letter-spacing: 0.6px; padding: 4px 12px; display: flex; align-items: center; gap: 8px; print-color-adjust: exact; }
+    .section-header { display: flex; align-items: flex-start; background: white; color: var(--navy); padding: 0 2px; position: relative; height: 100%; print-color-adjust: exact; }
     .section-header-text { flex: 1; outline: none; cursor: text; font-weight: 700; font-size: 15px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--block-color, var(--navy)); white-space: nowrap; overflow: hidden; text-overflow: clip; min-width: 0; line-height: 1.2; border-bottom: 2.5px solid var(--block-color, var(--navy)); padding: 0 0 4px 4px; }
     
     .textbox-block { background: white; border: 1.5px solid var(--block-color, var(--steel)); border-radius: 3px; padding: 6px 10px; position: relative; min-height: 0.50in; }
@@ -413,15 +277,18 @@
     .photoarray-cell { background: var(--frost); border: 1px dashed var(--steel); border-radius: 3px; display: flex; flex-direction: column; cursor: pointer; overflow: hidden; position: relative; min-height: 0; }
     .photoarray-cell:not(.has-image) { align-items: center; justify-content: center; }
     .photoarray-cell:hover { background: #dde4ee; }
+    .photoarray-cell:focus { outline: 2px solid var(--navy); outline-offset: 2px; background: #dde4ee; }
+    .photoarray-cell:focus:not(.has-image) { background: var(--frost); }
     .photoarray-cell.has-image { background: white; border-style: solid; border-color: var(--frost); }
     .photoarray-cell.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
     .photoarray-cell-image { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
     .photoarray-cell-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .photoarray-caption { flex: 0 0 auto; border: none; border-top: 1px solid var(--frost); outline: none; background: transparent; text-align: center; font-size: 11px; font-style: italic; color: var(--charcoal); padding: 2px 6px; width: 100%; height: 20px; font-family: inherit; box-sizing: border-box; }
+    .photoarray-caption:focus { background: rgba(232, 235, 240, 0.5); }
+    .photoarray-caption::placeholder { color: var(--steel); font-style: italic; }
     .photoarray-cell .placeholder { color: #888; font-size: 10px; text-align: center; padding: 4px; pointer-events: none; line-height: 1.25; }
     .photoarray-cell .clear-btn { position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,0.65); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 11px; font-weight: bold; display: none; line-height: 1; }
     .photoarray-cell:hover .clear-btn { display: block; }
-    .photoarray-row-wrapper { position: relative; display: flex; flex-direction: column; }
     .photoarray-row-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; width: 7.70in; max-width: 100%; margin: 4px auto 0; min-height: 22px; }
     .photoarray-add-image { padding: 3px 10px; border: 1px solid var(--navy); background: white; color: var(--navy); border-radius: 3px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; line-height: 1.4; }
     .photoarray-add-image:hover { background: var(--navy); color: white; }
@@ -435,16 +302,17 @@
     .textbox-text:focus { background: rgba(232, 235, 240, 0.4); border-radius: 2px; }
     .textbox-text:empty::before { content: attr(data-placeholder); color: var(--steel); font-style: italic; pointer-events: none; }
 
-    .parts-header-label { flex: 1; outline: none; cursor: text; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-    .parts-header-label:focus { background: rgba(255,255,255,0.18); border-radius: 2px; }
-    .parts-header-label:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.65); font-weight: 400; font-style: italic; letter-spacing: normal; }
+    .block-title-text { flex: 1; outline: none; cursor: text; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+    .block-title-text:focus { background: rgba(255,255,255,0.18); border-radius: 2px; }
+    .block-title-text:empty::before { content: attr(data-placeholder); color: rgba(255,255,255,0.65); font-weight: 400; font-style: italic; letter-spacing: normal; }
+    .block-title-remove { background: rgba(0,0,0,0.18); border: none; color: white; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; font-size: 10px; font-weight: bold; line-height: 1; flex-shrink: 0; padding: 0; }
+    .block-title-remove:hover { background: rgba(0,0,0,0.32); }
 
     .parts-table { width: 100%; border-collapse: collapse; table-layout: auto; }
     .parts-table thead th { background: #eef0f3; border: 1px solid var(--steel); padding: 0; text-align: left; vertical-align: middle; position: relative; print-color-adjust: exact; }
     .parts-table tbody td { border: 1px solid var(--steel); padding: 0; vertical-align: middle; position: relative; }
     .parts-table tbody td.parts-cell-selected { background: rgba(78, 114, 160, 0.18); box-shadow: inset 0 0 0 1px var(--color-cobalt); }
     .parts-table tbody td.parts-cell-selected .parts-cell { background: transparent; }
-
     .parts-cell { outline: none; cursor: text; padding: 4px 8px; min-height: 18px; font-size: 10.5px; line-height: 1.3; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .parts-cell:focus { background: var(--frost); white-space: normal; overflow: visible; text-overflow: clip; }
     .parts-cell:empty::before { content: attr(data-placeholder); color: var(--steel); font-style: italic; }
@@ -459,39 +327,11 @@
     .parts-actions button:hover { border-color: var(--navy); color: var(--navy); }
     .parts-paste-hint { font-size: 10px; color: var(--charcoal); opacity: 0.7; font-style: italic; margin-left: auto; align-self: center; }
 
-    /* ---------- Section header block ---------- */
-    .section-header { display: flex; align-items: flex-start; background: white; color: var(--navy); padding: 0 2px; position: relative; height: 100%; print-color-adjust: exact; }
-    .section-header-text:focus { background: var(--frost); border-radius: 2px; }
-    .section-header-text:empty::before { content: attr(data-placeholder); color: var(--steel); font-weight: 400; font-style: italic; text-transform: none; letter-spacing: normal; }
-
-    .step-image { flex: 0 0 3.75in; height: 2.00in; background: var(--frost); border: 1px dashed var(--steel); border-radius: 3px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
-    .step-image:hover { background: #dde4ee; }
-    .step-image.has-image { background: white; border-style: solid; border-color: var(--frost); }
-    .step-image.dragover  { background: var(--frost); border-color: var(--navy); border-style: solid; }
-    .step-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .step-image .placeholder { color: #888; font-size: 10px; text-align: center; padding: 4px; pointer-events: none; line-height: 1.25; }
-    .step-image .clear-btn { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.65); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 11px; font-weight: bold; display: none; line-height: 1; }
-    .step-image:hover .clear-btn { display: block; }
-
-    .step-text { flex: 1; border: none; outline: none; font-family: inherit; font-size: 14px; line-height: 1.35; height: 100%; padding: 4px 6px; background: transparent; color: var(--charcoal); overflow: hidden; cursor: text; min-width: 0; }
     .step-text:focus { background: rgba(232, 235, 240, 0.5); }
-    .step-text:empty::before { content: attr(data-placeholder); color: var(--steel); font-style: italic; pointer-events: none; }
     .step.has-title .step-number { top: 4px; left: 4px; }
     .step.has-title { padding-top: 18px; }
 
-    .rich-text-editor [style*="font-size: small"]    { font-size: 9px    !important; line-height: 1.25; }
-    .rich-text-editor [style*="font-size: medium"]   { font-size: 10.5px !important; line-height: 1.3;  }
-    .rich-text-editor [style*="font-size: large"]    { font-size: 13px   !important; line-height: 1.35; }
-    .rich-text-editor [style*="font-size: x-large"]  { font-size: 16px   !important; line-height: 1.4;  }
-    .rich-text-editor [style*="font-size: xx-large"] { font-size: 16px   !important; line-height: 1.4;  }
-
-    .wi-icon { display: inline-block; padding: 1px 5px; border-radius: 2px; font-weight: 700; font-size: 9px; letter-spacing: 0.4px; margin: 0 2px 0 0; white-space: nowrap; vertical-align: baseline; font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif; print-color-adjust: exact; }
-    .wi-warning { background: var(--danger); color: #ffffff; }
-    .wi-caution { background: var(--amber);  color: #2c1f00; }
-    .wi-inspect { background: var(--info);   color: #ffffff; }
-    .wi-torque  { background: #424242;       color: #ffffff; }
-
-    /* ---------- Callout block ---------- */
+    /* ---------- Callout color schemes ---------- */
     .callout { display: flex; align-items: stretch; border: 2px solid var(--callout-color, var(--charcoal)); border-radius: 3px; background: white; min-height: 100%; position: relative; print-color-adjust: exact; }
     .callout-warning  { --callout-color: var(--color-ember);   --callout-text-color: #ffffff; }
     .callout-caution  { --callout-color: var(--color-gold);    --callout-text-color: #ffffff; }
@@ -505,33 +345,22 @@
     .callout-finding  { --callout-color: var(--color-fern);    --callout-text-color: #ffffff; }
     .callout-concern  { --callout-color: var(--color-rose);    --callout-text-color: #ffffff; }
     .callout-analysis { --callout-color: var(--color-iris);    --callout-text-color: #ffffff; }
-
     .callout-badge { background: var(--callout-color); color: var(--callout-text-color); font-weight: 700; font-size: 11px; padding: 4px 10px; display: flex; align-items: center; justify-content: center; white-space: nowrap; letter-spacing: 0.5px; flex-shrink: 0; min-width: 0.85in; print-color-adjust: exact; }
-    .callout-text { flex: 1; padding: 4px 10px; font-size: 11px; line-height: 1.35; color: var(--charcoal); outline: none; cursor: text; overflow-wrap: break-word; word-break: break-word; white-space: normal; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-    .callout-text:focus { background: rgba(232, 235, 240, 0.5); }
-    .callout-text:empty::before { content: attr(data-placeholder); color: var(--steel); font-style: italic; pointer-events: none; }
 
-    /* ---------- Block controls ---------- */
+    /* ---------- Controls ---------- */
     .block-controls { position: absolute; top: 3px; right: 3px; display: flex; gap: 2px; z-index: 10; opacity: 0; transition: opacity 0.15s; }
-    .step:hover > .block-controls,
-    .callout:hover > .block-controls,
-    .section-header:hover > .block-controls,
-    .parts-block:hover > .block-controls,
-    .photoarray-block:hover > .block-controls,
-    .textbox-block:hover > .block-controls { opacity: 1; }
+    .step:hover > .block-controls, .callout:hover > .block-controls, .section-header:hover > .block-controls, .parts-block:hover > .block-controls, .photoarray-block:hover > .block-controls, .textbox-block:hover > .block-controls { opacity: 1; }
     .block-controls button { background: rgba(0, 0, 0, 0.6); color: white; border: none; width: 22px; height: 22px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; line-height: 1; padding: 0; font-family: inherit; }
     .block-controls button:hover { background: rgba(0, 0, 0, 0.85); }
     .block-controls button.delete:hover { background: var(--danger); }
     .block-controls button.add-title:hover { background: var(--color-cobalt); }
 
-    /* ---------- Drag and Drop Highlights ---------- */
     .drop-indicator { position: fixed; height: 3px; background: var(--color-cobalt); pointer-events: none; z-index: 600; display: none; border-radius: 2px; box-shadow: 0 0 8px rgba(78,114,160,0.55); }
     body.is-dragging .drop-indicator { display: block; }
     .block-dragging { opacity: 0.35; }
     .block-drag-handle { cursor: grab !important; font-size: 13px !important; letter-spacing: -1px; }
-    .block-drag-handle:active { cursor: grabbing !important; }
 
-    /* ---------- Color picker popup ---------- */
+    /* ---------- Pickers ---------- */
     .color-picker-popup { background: white; border: 1px solid var(--steel); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); padding: 8px; display: grid; grid-template-columns: repeat(6, 22px); gap: 4px; }
     .color-picker-popup .cp-swatch { width: 22px; height: 22px; border-radius: 3px; border: 2px solid transparent; cursor: pointer; padding: 0; print-color-adjust: exact; }
     .color-picker-popup .cp-swatch:hover { border-color: var(--navy); transform: scale(1.12); }
@@ -540,58 +369,23 @@
     .color-picker-popup .cp-row input[type=color] { width: 30px; height: 22px; border: 1px solid var(--steel); border-radius: 3px; padding: 1px; cursor: pointer; }
     .color-picker-popup .cp-reset { font-size: 10px; padding: 2px 7px; border: 1px solid var(--steel); background: white; border-radius: 3px; cursor: pointer; font-family: inherit; color: var(--danger); margin-left: auto; }
     .color-picker-popup .cp-reset:hover { border-color: var(--danger); }
-    .block-controls button.paint-btn { font-size: 11px; }
-    .block-controls button.paint-btn:hover { background: rgba(90,142,144,0.9); }
 
     .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--charcoal); border: 2px dashed var(--steel); border-radius: 4px; padding: 30px; }
     .empty-state-title { font-size: 18px; font-weight: 600; color: var(--navy); letter-spacing: 0.3px; }
     .empty-state-body { font-size: 13px; color: var(--charcoal); opacity: 0.8; text-align: center; max-width: 380px; line-height: 1.4; }
-    .empty-state-body strong { color: var(--navy); }
 
-    .page-footer { display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: var(--charcoal); padding-top: 5px; border-top: 1px solid var(--frost); margin-top: 6px; flex-shrink: 0; gap: 12px; }
-    .page-footer-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .page-footer-pageno { flex-shrink: 0; white-space: nowrap; }
-
-    .toast { position: fixed; top: 160px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 4px; z-index: 1000; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
-    .toast.show { opacity: 1; }
-
-    /* ---------- Narrow View Overlay Modifiers ---------- */
     @media screen and (max-width: 900px) {
-      body {
-        padding-left: 0 !important;
-        padding-top: calc(52px + env(safe-area-inset-top, 0px));
-        overflow-x: auto;
-      }
-      .sidebar-backdrop {
-        display: block; /* Active modal block layer on small viewports */
-      }
-      .topbar { height: calc(52px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0) max(8px, env(safe-area-inset-right, 0)) 0 max(8px, env(safe-area-inset-left, 0)); gap: 5px; overflow-x: auto; }
-      .topbar h1 { font-size: 13px; margin: 0 4px 0 0; white-space: nowrap; }
-      .topbar button { padding: 9px 10px; font-size: 12px; flex-shrink: 0; min-height: 36px; white-space: nowrap; }
-      .topbar .spacer { flex: 1; }
+      body { padding-left: 0 !important; padding-top: calc(52px + env(safe-area-inset-top, 0px)); overflow-x: auto; }
+      body:not(.sidebar-collapsed) .sidebar-backdrop { display: block; }
       .sidebar, .sidebar-backdrop { top: calc(52px + env(safe-area-inset-top, 0px)); }
-      .sidebar-block-list button { padding: 11px 12px; font-size: 13px; min-height: 44px; }
-      .sidebar-fmt-row button { min-height: 36px; }
-      .sidebar-icon-grid button { min-height: 38px; }
-      .sidebar-toggle { width: 36px; height: 36px; font-size: 20px; }
-      .pages-container { padding: 12px 0 30px; gap: 14px; }
       .page { transform: scale(var(--page-scale, 1)); transform-origin: top center; margin-bottom: var(--page-margin-fix, 0px); }
-      .row-step:first-child { margin-top: 6px; }
-      .step-image .clear-btn, .parts-row-delete, .parts-col-delete, .photoarray-cell .clear-btn, .photoarray-row-delete { visibility: visible; }
-      .photoarray-cell .clear-btn { display: block; }
-      .block-controls { opacity: 1; }
-      .block-controls button { width: 28px; height: 28px; font-size: 13px; }
     }
-
     @media screen and (max-width: 600px) {
       .topbar h1 { display: none; }
       .topbar button { padding: 8px 10px; font-size: 12px; }
       .topbar .btn-label-full { display: none; }
       .topbar .btn-label-short { display: inline; }
     }
-
-    /* ---------- Print Rules ---------- */
-    @page { size: letter; margin: 0; }
     @media print {
       html, body { background: white; margin: 0; padding: 0 !important; }
       .topbar, .sidebar, .sidebar-backdrop, .no-print, .block-controls { display: none !important; }
@@ -600,19 +394,6 @@
       .photoarray-cell:not(.has-image) { background: white; border: 1px solid #bbb; }
       .pages-container { padding: 0; gap: 0; }
       .page { box-shadow: none; margin: 0 !important; overflow: hidden; transform: none !important; margin-bottom: 0 !important; page-break-after: always; break-after: page; break-inside: avoid-page; page-break-inside: avoid; }
-      .page.is-empty { height: auto !important; min-height: 0 !important; }
-      .page:last-child { page-break-after: auto; break-after: auto; }
-      .step-image:not(.has-image) { background: white; border: 1px solid #bbb; }
-      .step-image:not(.has-image) .placeholder { display: none; }
-      .logo-area:not(.has-image) { border: none; }
-      .logo-area:not(.has-image) .placeholder { display: none; }
-      .title-field::placeholder, .meta-field input::placeholder, .photoarray-caption::placeholder { color: transparent !important; }
-      .photoarray-caption { border-top: 1px solid #ddd; background: transparent; }
-      .photoarray-caption:placeholder-shown { display: none; }
-      .step-text:empty::before, .callout-text:empty::before, .textbox-text:empty::before, .section-header-text:empty::before { content: ''; }
-      .step-text:focus, .callout-text:focus, .textbox-text:focus { background: transparent; }
-      .textbox-block { border-color: transparent !important; padding: 0 !important; }
-      .empty-state { display: none; }
     }
   </style>
 </head>
@@ -700,8 +481,7 @@
 </aside>
 
 <div class="sidebar-backdrop no-print" id="sidebarBackdrop"></div>
-
-<div class="floating-fmt-toolbar no-print" id="floatingFormatToolbar" hidden>
+<div id="floatingFormatToolbar" class="floating-fmt-toolbar no-print" hidden>
   <button class="fmt-bold" data-cmd="bold" type="button" title="Bold (toggle)">B</button>
   <span class="floating-fmt-sep"></span>
   <span class="floating-fmt-label">Size</span>
@@ -728,11 +508,7 @@
   'use strict';
 
   const STORAGE_KEY = 'workInstructionBuilder_v4';
-  const LEGACY_KEYS = [
-    'workInstructionBuilder_v3',
-    'workInstructionBuilder_v2',
-    'workInstructionBuilder_v1'
-  ];
+  const LEGACY_KEYS = ['workInstructionBuilder_v3','workInstructionBuilder_v2','workInstructionBuilder_v1'];
 
   const PAGE_CONTENT_HEIGHT = 9.20;
   const STEP_ROW_HEIGHT     = 2.20;
@@ -740,9 +516,8 @@
   const SECTION_ROW_HEIGHT  = 0.60;
   const ROW_GAP             = 0.10;
   const TITLE_BAR_HEIGHT    = 0.23;
-
-  const PARTS_BASE_HEIGHT = 0.85;
-  const PARTS_ROW_HEIGHT  = 0.22;
+  const PARTS_BASE_HEIGHT   = 0.85;
+  const PARTS_ROW_HEIGHT    = 0.22;
 
   const CALLOUT_KINDS = {
     warning:   { label: 'WARNING',  icon: '\u26A0' },
@@ -760,101 +535,47 @@
   };
 
   const FORM_TYPES = {
-    blank: { titlePlaceholder: 'Form Title', fields: [] },
+    blank: { label: 'Blank', titlePlaceholder: 'Form Title', fields: [] },
     workInstruction: {
-      titlePlaceholder: 'Work Instruction Title (e.g., Turbocharger Cartridge Assembly)',
+      label: 'Work Instruction', titlePlaceholder: 'Work Instruction Title (e.g., Turbocharger Cartridge Assembly)',
       fields: [
         { key: 'partNumber', label: 'Part #',    width: 110 },
         { key: 'operation',  label: 'Operation', width: 130 },
         { key: 'rev',        label: 'Rev',       width: 50  },
         { key: 'date',       label: 'Date',      width: 90  }
       ]
-    },
-    sampleProductAnalysis: {
-      titlePlaceholder: 'Sample Product Analysis Title',
-      fields: [
-        { key: 'vendor',           label: 'Vendor',           width: 120 },
-        { key: 'vendorPartNumber', label: 'Vendor Part #',    width: 110 },
-        { key: 'pdiPartNumber',    label: 'PDI Part #',       width: 110 },
-        { key: 'partDescription',  label: 'Part Description', width: 180 },
-        { key: 'date',             label: 'Date',             width: 90  }
-      ]
-    },
-    incomingQuality: {
-      titlePlaceholder: 'Incoming Quality Inspection Title',
-      fields: [
-        { key: 'vendor',          label: 'Vendor',          width: 110 },
-        { key: 'inspectionDate',  label: 'Inspection Date', width: 95  },
-        { key: 'inspector',       label: 'Inspector',       width: 110 },
-        { key: 'pdiPoNumber',     label: 'PDI PO #',        width: 100 },
-        { key: 'lotNumber',       label: 'Lot #',           width: 90  },
-        { key: 'pdiPartNumber',   label: 'PDI Part #',      width: 100 },
-        { key: 'partDescription', label: 'Part Description', width: 150 },
-        { key: 'sampleQty',       label: 'Sample Qty',      width: 70  }
-      ]
-    },
-    warranty: {
-      titlePlaceholder: 'Warranty Analysis Title',
-      fields: [
-        { key: 'customerName',      label: 'Customer Name',      width: 140 },
-        { key: 'partNumber',        label: 'Part #',             width: 100 },
-        { key: 'quantity',          label: 'Qty',                width: 60  },
-        { key: 'installDate',       label: 'Install Date',       width: 90  },
-        { key: 'failDate',          label: 'Fail Date',          width: 90  },
-        { key: 'customerComplaint', label: 'Customer Complaint', width: 180 }
-      ]
     }
   };
 
-  function getFormSchema(formType) {
-    return FORM_TYPES[formType] || FORM_TYPES.blank;
-  }
-  
+  function getFormSchema(formType) { return FORM_TYPES[formType] || FORM_TYPES.blank; }
   let _idCounter = 0;
   let state = createEmptyState();
   let lastFocusedEditable = null;
   let lastFocusedBlockId = null;
   let focusBlockIdAfterRender = null;
   const pendingPhotoSlot = new Map();
-
   const partsCellSelection = new Map();
   let partsDrag = null;
-
   let _dragData = null;
   let _dragInsertIdx = -1;
   let _lastMousedownEl = null;
 
-  function genId() {
-    _idCounter += 1;
-    return 'b_' + Date.now().toString(36) + '_' + _idCounter.toString(36);
-  }
-
+  function genId() { _idCounter += 1; return 'b_' + Date.now().toString(36) + '_' + _idCounter.toString(36); }
   function createStepBlock(img, text) { return { id: genId(), type: 'step', img: img || null, text: text || '' }; }
   function createCalloutBlock(kind, text) { return { id: genId(), type: 'callout', kind: CALLOUT_KINDS[kind] ? kind : 'note', text: text || '' }; }
   function createSectionBlock(text) { return { id: genId(), type: 'section', text: text || '' }; }
+  function createTextBoxBlock(text) { return { id: genId(), type: 'textbox', text: text || '' }; }
   function createPartsBlock(columns, rows, title) {
     const cols = Array.isArray(columns) && columns.length > 0 ? columns.slice() : ['Part Number', 'Description', 'Quantity'];
-    let rs = (Array.isArray(rows) && rows.length > 0) ? rows.map(r => Array(cols.length).fill('').map((_, i) => typeof r[i] === 'string' ? r[i] : '')) : [Array(cols.length).fill('')];
-    return { id: genId(), type: 'parts', title: title || '', columns: cols, rows: rs };
+    return { id: genId(), type: 'parts', title: title || '', columns: cols, rows: [Array(cols.length).fill('')] };
   }
   function createPhotoArrayBlock(rows) {
-    let rs = (Array.isArray(rows) && rows.length > 0) ? rows.map(r => [0,1,2].map(i => r[i] ? (typeof r[i] === 'string' ? { src: r[i], caption: '' } : { src: r[i].src, caption: r[i].caption || '' }) : null)) : [[null, null, null]];
-    return { id: genId(), type: 'photoarray', rows: rs };
+    return { id: genId(), type: 'photoarray', rows: Array.isArray(rows) ? rows : [[null, null, null]] };
   }
-  function createTextBoxBlock(text) { return { id: genId(), type: 'textbox', text: text || '' }; }
   function createEmptyState() { return { logo: null, title: '', formType: 'blank', metaFields: {}, blocks: [] }; }
 
-  function migrateLegacyState(old) {
-    if (!old || typeof old !== 'object') return null;
-    if (Array.isArray(old.blocks)) {
-      return { logo: old.logo || null, title: old.title || '', formType: old.formType || 'blank', metaFields: old.metaFields || {}, blocks: old.blocks.filter(Boolean) };
-    }
-    return null;
-  }
-
   function normalizeState(s) {
-    s = migrateLegacyState(s) || s;
-    if (!s.metaFields) s.metaFields = {};
+    if (!s || typeof s !== 'object') return createEmptyState();
     if (!Array.isArray(s.blocks)) s.blocks = [];
     s.blocks.forEach(b => {
       if (!b.id) b.id = genId();
@@ -863,15 +584,12 @@
     return s;
   }
 
-  function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.warn('Auto-save skipped.', e); }
-  }
-
+  function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.warn(e); } }
   function loadState() {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) { state = normalizeState(JSON.parse(data)); return true; }
-    } catch (e) { console.warn(e); }
+    } catch (e) {}
     return false;
   }
 
@@ -882,11 +600,16 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          canvas.width = Math.min(img.width, opts.maxWidth);
-          canvas.height = Math.min(img.height, opts.maxHeight);
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          if (w > opts.maxWidth || h > opts.maxHeight) {
+            const r = Math.min(opts.maxWidth / w, opts.maxHeight / h);
+            w = Math.round(w * r); h = Math.round(h * r);
+          }
+          canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL(opts.mimeType));
+          if (opts.mimeType === 'image/jpeg') { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,w,h); }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL(opts.mimeType, opts.quality || 1.0));
         };
         img.src = reader.result;
       };
@@ -895,20 +618,11 @@
   }
 
   function loadLogoFile(file) { return processImage(file, { maxWidth: 800, maxHeight: 400, mimeType: 'image/png' }); }
-  function loadStepImageFile(file) { return processImage(file, { maxWidth: 1600, maxHeight: 1600, mimeType: 'image/jpeg' }); }
-
-  function pickFile(accept) {
-    return new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = accept;
-      input.onchange = () => resolve(input.files?.[0] || null);
-      input.click();
-    });
-  }
+  function loadStepImageFile(file) { return processImage(file, { maxWidth: 1600, maxHeight: 1600, mimeType: 'image/jpeg', quality: 0.85 }); }
+  function pickFile(accept) { return new Promise(r => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => r(i.files?.[0]); i.click(); }); }
 
   function findBlockById(id) { return state.blocks.find(b => b.id === id) || null; }
   function findBlockIndex(id) { return state.blocks.findIndex(b => b.id === id); }
-
   function estimateSpacerHeight(block) { return STEP_ROW_HEIGHT; }
 
   function blocksToRows(blocks) {
@@ -926,45 +640,39 @@
   }
 
   function paginate(rows) {
-    const pages = [[]];
-    rows.forEach(r => pages[pages.length - 1].push(r));
-    return pages;
+    const pages = []; let cur = [], h = 0;
+    for (const row of rows) {
+      let rh = row.type === 'photoarrayrow' ? 2.50 : STEP_ROW_HEIGHT;
+      if (h + rh > PAGE_CONTENT_HEIGHT && cur.length > 0) { pages.push(cur); cur = []; h = 0; }
+      cur.push(row); h += rh;
+    }
+    if (cur.length > 0) pages.push(cur);
+    return pages.length ? pages : [[]];
   }
 
   function render() {
-    let n = 0;
-    state.blocks.forEach(b => { if (b.type === 'step') b._number = ++n; });
+    let n = 0; state.blocks.forEach(b => { if (b.type === 'step') b._number = ++n; });
     const rows = blocksToRows(state.blocks);
-    const pages = paginate(rows);
-    const container = document.getElementById('pagesContainer');
-    container.innerHTML = '';
+    let pages = paginate(rows);
+    const container = document.getElementById('pagesContainer'); container.innerHTML = '';
     pages.forEach((pageRows, pageIdx) => container.appendChild(buildPageElement(pageRows, pageIdx, pages.length)));
   }
 
   function buildPageElement(rows, pageIdx, totalPages) {
-    const pageEl = document.createElement('div');
-    pageEl.className = 'page';
+    const pageEl = document.createElement('div'); pageEl.className = 'page';
     pageEl.appendChild(buildHeader());
-    const content = document.createElement('div');
-    content.className = 'content-area';
+    const content = document.createElement('div'); content.className = 'content-area';
 
-    if (rows.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state no-print';
-      empty.innerHTML = '<div class="empty-state-title">Empty document</div>';
-      content.appendChild(empty);
-    } else {
-      let i = 0;
-      while (i < rows.length) {
-        const row = rows[i];
-        if (row.type === 'photoarrayrow') {
-          const chunk = { type: 'photoarraychunk', block: row.block, rowIndices: [row.rowIdx], isFirstChunk: row.isFirstInBlock, isLastChunk: row.isLastInBlock };
-          content.appendChild(buildRowElement(chunk));
-          i++;
-        } else {
-          content.appendChild(buildRowElement(row));
-          i++;
-        }
+    let i = 0;
+    while (i < rows.length) {
+      const row = rows[i];
+      if (row.type === 'photoarrayrow') {
+        const block = row.block; const indices = [row.rowIdx]; let j = i + 1;
+        while (j < rows.length && rows[j].type === 'photoarrayrow' && rows[j].block === block) { indices.push(rows[j].rowIdx); j++; }
+        content.appendChild(buildRowElement({ type: 'photoarraychunk', block, rowIndices: indices, isFirstChunk: indices[0] === 0, isLastChunk: indices[indices.length - 1] === block.rows.length - 1 }));
+        i = j;
+      } else {
+        content.appendChild(buildRowElement(row)); i++;
       }
     }
     pageEl.appendChild(content);
@@ -972,264 +680,249 @@
   }
 
   function buildHeader() {
-    const header = document.createElement('div');
-    header.className = 'header';
-    const logo = document.createElement('div');
-    logo.className = 'logo-area' + (state.logo ? ' has-image' : '');
-    if (state.logo) {
-      const img = document.createElement('img'); img.src = state.logo; logo.appendChild(img);
-    } else {
-      logo.innerHTML = '<div class="placeholder">Logo</div>';
-    }
+    const header = document.createElement('div'); header.className = 'header';
+    const logo = document.createElement('div'); logo.className = 'logo-area' + (state.logo ? ' has-image' : '');
+    logo.onclick = async () => { const file = await pickFile('image/*'); if (file) { state.logo = await loadLogoFile(file); saveState(); render(); } };
+    if (state.logo) { const img = document.createElement('img'); img.src = state.logo; logo.appendChild(img); }
+    else { logo.innerHTML = '<div class="placeholder">Click for Logo</div>'; }
     header.appendChild(logo);
 
-    const info = document.createElement('div');
-    info.className = 'header-info';
-    const titleRow = document.createElement('div');
-    titleRow.className = 'title-row';
-    const input = document.createElement('input');
-    input.className = 'title-field';
-    input.value = state.title || '';
-    input.placeholder = 'Document Title';
-    input.oninput = () => { state.title = input.value; saveState(); };
-    titleRow.appendChild(input);
-    info.appendChild(titleRow);
-    header.appendChild(info);
+    const info = document.createElement('div'); info.className = 'header-info';
+    const titleRow = document.createElement('div'); titleRow.className = 'title-row';
+    const title = document.createElement('input'); title.className = 'title-field'; title.placeholder = 'Document Title'; title.value = state.title || '';
+    title.oninput = () => { state.title = title.value; saveState(); };
+    titleRow.appendChild(title); info.appendChild(titleRow); header.appendChild(info);
     return header;
   }
 
   function buildRowElement(row) {
-    const el = document.createElement('div');
-    el.className = 'row row-' + row.type;
-    el.dataset.rowBlockId = row.block.id;
+    const el = document.createElement('div'); el.className = 'row row-' + row.type; el.dataset.rowBlockId = row.block.id;
+    if (row.type === 'spacer') { el.style.height = row.height + 'in'; return el; }
 
-    let child;
-    if (row.type === 'step') child = buildStepElement(row.block);
-    else if (row.type === 'callout') child = buildCalloutElement(row.block);
-    else if (row.type === 'section') child = buildSectionElement(row.block);
-    else if (row.type === 'parts') child = buildPartsElement(row.block);
-    else if (row.type === 'textbox') child = buildTextBoxElement(row.block);
-    else if (row.type === 'photoarraychunk') child = buildPhotoArrayElement(row.block, row);
-    
-    if (child) {
-      if (row.block.color) child.style.setProperty('--block-color', row.block.color);
-      el.appendChild(child);
+    let inner;
+    if (row.type === 'step') inner = buildStepElement(row.block);
+    else if (row.type === 'callout') inner = buildCalloutElement(row.block);
+    else if (row.type === 'section') inner = buildSectionElement(row.block);
+    else if (row.type === 'parts') inner = buildPartsElement(row.block);
+    else if (row.type === 'textbox') inner = buildTextBoxElement(row.block);
+    else if (row.type === 'photoarraychunk') {
+      inner = document.createElement('div'); inner.className = 'photoarray-block';
+      if (row.isFirstChunk && typeof row.block.title === 'string') inner.appendChild(buildBlockTitleBar(row.block));
+      inner.appendChild(buildPhotoArrayElement(row.block, row));
+    }
+
+    if (inner) {
+      if (row.block.color) inner.style.setProperty('--block-color', row.block.color);
+      el.appendChild(inner);
     }
     return el;
   }
 
   function buildStepElement(block) {
-    const el = document.createElement('div');
-    el.className = 'step';
+    const el = document.createElement('div'); el.className = 'step' + (typeof block.title === 'string' ? ' has-title' : '');
     el.dataset.blockId = block.id;
-    el.innerHTML = `<div class="step-number">${block._number || ''}</div>
-                    <div class="step-image"><div class="placeholder">Click / Drop Image</div></div>
-                    <div class="step-text rich-text-editor" contenteditable="true">${block.text || ''}</div>`;
-    el.appendChild(buildBlockControls(block));
-    const textEl = el.querySelector('.step-text');
-    textEl.addEventListener('input', () => { block.text = textEl.innerHTML; saveState(); });
+    if (typeof block.title === 'string') el.appendChild(buildBlockTitleBar(block));
+
+    const num = document.createElement('div'); num.className = 'step-number'; num.textContent = block._number || ''; el.appendChild(num);
+    const imgArea = document.createElement('div'); imgArea.className = 'step-image' + (block.img ? ' has-image' : '');
+    imgArea.onclick = async () => { const f = await pickFile('image/*'); if (f) { block.img = await loadStepImageFile(f); saveState(); render(); } };
+    if (block.img) { const img = document.createElement('img'); img.src = block.img; imgArea.appendChild(img); }
+    else { imgArea.innerHTML = '<div class="placeholder">Click to Upload Image</div>'; }
+    el.appendChild(imgArea);
+
+    const text = document.createElement('div'); text.className = 'step-text rich-text-editor'; text.contentEditable = 'true'; text.innerHTML = block.text || '';
+    text.oninput = () => { block.text = text.innerHTML; saveState(); };
+    el.appendChild(text); el.appendChild(buildBlockControls(block));
     return el;
   }
 
   function buildSectionElement(block) {
-    const el = document.createElement('div');
-    el.className = 'section-header';
-    el.dataset.blockId = block.id;
-    el.innerHTML = `<div class="section-header-text rich-text-editor" contenteditable="true">${block.text || 'Section Header'}</div>`;
-    el.appendChild(buildBlockControls(block));
-    const textEl = el.querySelector('.section-header-text');
-    textEl.addEventListener('input', () => { block.text = textEl.innerHTML; saveState(); });
+    const el = document.createElement('div'); el.className = 'section-header'; el.dataset.blockId = block.id;
+    const text = document.createElement('div'); text.className = 'section-header-text rich-text-editor'; text.contentEditable = 'true'; text.innerHTML = block.text || 'SECTION TITLE';
+    text.oninput = () => { block.text = text.innerHTML; saveState(); };
+    el.appendChild(text); el.appendChild(buildBlockControls(block));
     return el;
   }
 
   function buildTextBoxElement(block) {
-    const el = document.createElement('div');
-    el.className = 'textbox-block';
-    el.dataset.blockId = block.id;
-    el.innerHTML = `<div class="textbox-text rich-text-editor" contenteditable="true">${block.text || 'Text block...'}</div>`;
-    el.appendChild(buildBlockControls(block));
-    const textEl = el.querySelector('.textbox-text');
-    textEl.addEventListener('input', () => { block.text = textEl.innerHTML; saveState(); });
+    const el = document.createElement('div'); el.className = 'textbox-block'; el.dataset.blockId = block.id;
+    const text = document.createElement('div'); text.className = 'textbox-text rich-text-editor'; text.contentEditable = 'true'; text.innerHTML = block.text || 'Enter text...';
+    text.oninput = () => { block.text = text.innerHTML; saveState(); };
+    el.appendChild(text); el.appendChild(buildBlockControls(block));
     return el;
   }
 
   function buildPartsElement(block) {
-    const el = document.createElement('div');
-    el.className = 'parts-block';
-    el.dataset.blockId = block.id;
-    el.innerHTML = `<div class="parts-header"><div class="parts-header-label rich-text-editor" contenteditable="true">${block.title || 'Chart Title'}</div></div>
-                    <table class="parts-table"><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td class="parts-cell rich-text-editor" contenteditable="true">Data 1</td><td class="parts-cell rich-text-editor" contenteditable="true">Data 2</td></tr></tbody></table>`;
-    el.appendChild(buildBlockControls(block));
-    const titleEl = el.querySelector('.parts-header-label');
-    titleEl.addEventListener('input', () => { block.title = titleEl.innerHTML; saveState(); });
+    const el = document.createElement('div'); el.className = 'parts-block'; el.dataset.blockId = block.id;
+    const header = document.createElement('div'); header.className = 'parts-header';
+    header.innerHTML = `<div class="parts-header-label rich-text-editor" contenteditable="true">${block.title || 'Chart'}</div>`;
+    header.querySelector('.parts-header-label').oninput = (e) => { block.title = e.target.innerHTML; saveState(); };
+    el.appendChild(header);
+
+    const table = document.createElement('table'); table.className = 'parts-table';
+    table.innerHTML = `<thead><tr><th class="parts-cell">Item</th><th class="parts-cell">Description</th></tr></thead>
+                       <tbody><tr><td class="parts-cell rich-text-editor" contenteditable="true"></td><td class="parts-cell rich-text-editor" contenteditable="true"></td></tr></tbody>`;
+    el.appendChild(table); el.appendChild(buildBlockControls(block));
     return el;
   }
 
+  function compactPhotoArrayRow(row) {
+    const out = row.filter(c => c && c.src);
+    while (out.length < 3) out.push(null);
+    return out;
+  }
+
   function buildPhotoArrayElement(block, chunk) {
-    const el = document.createElement('div');
-    el.className = 'photoarray-block';
-    el.dataset.blockId = block.id;
-    el.innerHTML = `<div class="photoarray-row count-3">
-                      <div class="photoarray-cell"><div class="placeholder">Image</div></div>
-                      <div class="photoarray-cell"><div class="placeholder">Image</div></div>
-                      <div class="photoarray-cell"><div class="placeholder">Image</div></div>
-                    </div>`;
+    const el = document.createElement('div'); el.className = 'photoarray-row count-3';
+    const rowIdx = chunk.rowIndices[0]; const row = block.rows[rowIdx] || [null, null, null];
+
+    row.forEach((cellData, colIdx) => {
+      const cell = document.createElement('div'); cell.className = 'photoarray-cell' + (cellData?.src ? ' has-image' : '');
+      cell.onclick = async (e) => {
+        if (e.target.closest('.photoarray-caption')) return;
+        const f = await pickFile('image/*');
+        if (f) {
+          block.rows[rowIdx][colIdx] = { src: await loadStepImageFile(f), caption: cellData?.caption || '' };
+          block.rows[rowIdx] = compactPhotoArrayRow(block.rows[rowIdx]);
+          saveState(); render();
+        }
+      };
+      if (cellData?.src) {
+        cell.innerHTML = `<div class="photoarray-cell-image"><img src="${cellData.src}"></div>
+                          <input type="text" class="photoarray-caption" placeholder="Caption" value="${cellData.caption || ''}">`;
+        cell.querySelector('.photoarray-caption').oninput = (e) => { block.rows[rowIdx][colIdx].caption = e.target.value; saveState(); };
+      } else {
+        cell.innerHTML = '<div class="placeholder">Click to Upload Photo</div>';
+      }
+      el.appendChild(cell);
+    });
+
     if (chunk.isFirstChunk) el.appendChild(buildBlockControls(block));
     return el;
   }
 
   function buildCalloutElement(block) {
-    const el = document.createElement('div');
-    el.className = 'callout callout-' + block.kind;
-    el.dataset.blockId = block.id;
+    const el = document.createElement('div'); el.className = 'callout callout-' + block.kind; el.dataset.blockId = block.id;
     el.innerHTML = `<div class="callout-badge">${block.kind.toUpperCase()}</div>
                     <div class="callout-text rich-text-editor" contenteditable="true">${block.text || ''}</div>`;
+    el.querySelector('.callout-text').oninput = (e) => { block.text = e.target.innerHTML; saveState(); };
     el.appendChild(buildBlockControls(block));
-    const textEl = el.querySelector('.callout-text');
-    textEl.addEventListener('input', () => { block.text = textEl.innerHTML; saveState(); });
     return el;
   }
 
-  function buildBlockControls(block) {
-    const wrap = document.createElement('div');
-    wrap.className = 'block-controls no-print';
+  function buildBlockTitleBar(block) {
+    const bar = document.createElement('div'); bar.className = 'block-title-bar';
+    bar.innerHTML = `<div class="block-title-text rich-text-editor" contenteditable="true">${block.title || 'Title'}</div>
+                     <button class="block-title-remove no-print">✕</button>`;
+    bar.querySelector('.block-title-text').oninput = (e) => { block.title = e.target.innerHTML; saveState(); };
+    bar.querySelector('.block-title-remove').onclick = () => { delete block.title; saveState(); render(); };
+    return bar;
+  }
 
-    const handle = document.createElement('button');
-    handle.textContent = '☰';
-    handle.className = 'block-drag-handle';
-    handle.setAttribute('draggable', 'true');
-    handle.onclick = (e) => e.stopPropagation();
-    handle.onlayerclick = (e) => e.stopPropagation();
-    handle.addEventListener('dragstart', (e) => {
-      e.stopPropagation();
-      e.dataTransfer.effectAllowed = 'move';
-      _dragData = { source: 'block', id: block.id };
-      document.body.classList.add('is-dragging');
-    });
+  function buildBlockControls(block) {
+    const wrap = document.createElement('div'); wrap.className = 'block-controls no-print';
+    
+    const handle = document.createElement('button'); handle.textContent = '☰'; handle.className = 'block-drag-handle'; handle.setAttribute('draggable', 'true');
+    handle.addEventListener('dragstart', (e) => { e.stopPropagation(); _dragData = { source: 'block', id: block.id }; document.body.classList.add('is-dragging'); });
     wrap.appendChild(handle);
 
-    const paintBtn = document.createElement('button');
-    paintBtn.className = 'paint-btn';
-    paintBtn.textContent = '▣';
-    paintBtn.onclick = (e) => { e.stopPropagation(); showColorPicker(block, paintBtn); };
-    wrap.appendChild(paintBtn);
+    if (['step', 'photoarray'].includes(block.type) && typeof block.title !== 'string') {
+      const tBtn = document.createElement('button'); tBtn.textContent = 'T'; tBtn.onclick = () => { block.title = ''; saveState(); render(); };
+      wrap.appendChild(tBtn);
+    }
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = '✕';
-    delBtn.className = 'delete';
-    delBtn.onclick = (e) => { e.stopPropagation(); deleteBlock(block.id); };
-    wrap.appendChild(delBtn);
+    const paint = document.createElement('button'); paint.textContent = '▣'; paint.className = 'paint-btn';
+    paint.onclick = (e) => { e.stopPropagation(); showColorPicker(block, paint); };
+    wrap.appendChild(paint);
 
+    const del = document.createElement('button'); del.textContent = '✕'; del.className = 'delete';
+    del.onclick = () => { state.blocks = state.blocks.filter(b => b.id !== block.id); saveState(); render(); };
+    wrap.appendChild(del);
     return wrap;
   }
 
-  function deleteBlock(id) {
-    state.blocks = state.blocks.filter(b => b.id !== id);
-    saveState(); render();
-  }
-
-  function showColorPicker(block, anchorBtn) {
+  function showColorPicker(block, anchor) {
     hideColorPicker();
-    const popup = document.createElement('div');
-    popup.id = 'colorPickerPopup'; popup.className = 'color-picker-popup no-print';
-
-    COLOR_PRESETS.forEach(color => {
-      const sw = document.createElement('button');
-      sw.className = 'cp-swatch'; sw.style.background = color;
-      sw.onclick = (e) => {
-        e.stopPropagation(); block.color = color; saveState(); hideColorPicker(); render();
-      };
-      popup.appendChild(sw);
+    const p = document.createElement('div'); p.id = 'colorPickerPopup'; p.className = 'color-picker-popup no-print';
+    COLOR_PRESETS.forEach(c => {
+      const s = document.createElement('button'); s.className = 'cp-swatch'; s.style.background = c;
+      s.onclick = () => { block.color = c; saveState(); hideColorPicker(); render(); };
+      p.appendChild(s);
     });
-
-    const rect = anchorBtn.getBoundingClientRect();
-    popup.style.position = 'fixed'; popup.style.left = rect.left + 'px'; popup.style.top = rect.bottom + 'px';
-    document.body.appendChild(popup);
-    setTimeout(() => document.addEventListener('click', hideColorPicker), 0);
+    const r = anchor.getBoundingClientRect(); p.style.position = 'fixed'; p.style.left = r.left + 'px'; p.style.top = r.bottom + 'px';
+    document.body.appendChild(p); setTimeout(() => document.addEventListener('click', hideColorPicker), 0);
   }
-
-  function hideColorPicker() { document.getElementById('colorPickerPopup')?.remove(); }
+  function hideColorPicker() { document.getElementById('colorPickerPopup')?.remove(); document.removeEventListener('click', hideColorPicker); }
 
   function setupDragAndDrop() {
     document.querySelectorAll('.sidebar [data-add]').forEach(btn => {
       btn.setAttribute('draggable', 'true');
-      btn.addEventListener('dragstart', (e) => {
-        e.dataTransfer.effectAllowed = 'copy';
-        _dragData = { source: 'sidebar', add: btn.dataset.add, kind: btn.dataset.kind || null };
-        document.body.classList.add('is-dragging');
-      });
+      btn.addEventListener('dragstart', () => { _dragData = { source: 'sidebar', add: btn.dataset.add, kind: btn.dataset.kind }; document.body.classList.add('is-dragging'); });
     });
-
     document.addEventListener('dragover', (e) => {
-      if (!_dragData) return;
-      e.preventDefault();
-      const contentArea = e.target.closest?.('.content-area');
-      if (!contentArea) return;
-      
-      const indicator = document.getElementById('dropIndicator');
-      const rects = contentArea.getBoundingClientRect();
-      indicator.style.display = 'block';
-      indicator.style.top = e.clientY + 'px';
-      indicator.style.left = rects.left + 'px';
-      indicator.style.width = rects.width + 'px';
-      
-      const rows = Array.from(contentArea.querySelectorAll('.row[data-row-block-id]'));
-      _dragInsertIdx = rows.length;
+      if (!_dragData) return; e.preventDefault(); const c = e.target.closest?.('.content-area'); if (!c) return;
+      const ind = document.getElementById('dropIndicator'); const r = c.getBoundingClientRect();
+      ind.style.display = 'block'; ind.style.top = e.clientY + 'px'; ind.style.left = r.left + 'px'; ind.style.width = r.width + 'px';
+      const rows = Array.from(c.querySelectorAll('.row[data-row-block-id]')); _dragInsertIdx = rows.length;
       for (let i = 0; i < rows.length; i++) {
-        const rRect = rows[i].getBoundingClientRect();
-        if (e.clientY < (rRect.top + rRect.height / 2)) {
-          const bId = rows[i].dataset.rowBlockId;
-          _dragInsertIdx = findBlockIndex(bId);
-          break;
-        }
+        if (e.clientY < (rows[i].getBoundingClientRect().top + rows[i].getBoundingClientRect().height / 2)) { _dragInsertIdx = findBlockIndex(rows[i].dataset.rowBlockId); break; }
       }
     });
-
     document.addEventListener('drop', (e) => {
-      if (!_dragData) return;
-      e.preventDefault();
-      const idx = _dragInsertIdx >= 0 ? _dragInsertIdx : state.blocks.length;
-
+      if (!_dragData) return; e.preventDefault(); const idx = _dragInsertIdx >= 0 ? _dragInsertIdx : state.blocks.length;
       if (_dragData.source === 'sidebar') {
         let nb;
         if (_dragData.add === 'step') nb = createStepBlock();
         else if (_dragData.add === 'callout') nb = createCalloutBlock(_dragData.kind);
         else if (_dragData.add === 'section') nb = createSectionBlock();
         else if (_dragData.add === 'parts') nb = createPartsBlock();
-        else if (_dragData.add === 'photoarray') nb = createPhotoArrayBlock();
         else if (_dragData.add === 'textbox') nb = createTextBoxBlock();
+        else if (_dragData.add === 'photoarray') nb = createPhotoArrayBlock();
         if (nb) state.blocks.splice(idx, 0, nb);
       } else if (_dragData.source === 'block') {
-        const fromIdx = findBlockIndex(_dragData.id);
-        if (fromIdx >= 0) {
-          const [moved] = state.blocks.splice(fromIdx, 1);
-          const targetIdx = fromIdx < idx ? idx - 1 : idx;
-          state.blocks.splice(targetIdx, 0, moved);
-        }
+        const fIdx = findBlockIndex(_dragData.id);
+        if (fIdx >= 0) { const [m] = state.blocks.splice(fIdx, 1); state.blocks.splice(fIdx < idx ? idx - 1 : idx, 0, m); }
       }
-      document.body.classList.remove('is-dragging');
-      document.getElementById('dropIndicator').style.display = 'none';
-      _dragData = null; saveState(); render();
+      document.body.classList.remove('is-dragging'); document.getElementById('dropIndicator').style.display = 'none'; _dragData = null; saveState(); render();
     });
   }
 
-  function exportTemplate() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'template.json';
-    a.click();
-  }
-
-  function importTemplate() {
-    pickFile('.json').then(file => {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => { state = normalizeState(JSON.parse(reader.result)); saveState(); render(); };
-      reader.readAsText(file);
+  function setupFocusTracking() {
+    document.addEventListener('focusin', (e) => {
+      if (e.target.classList?.contains('rich-text-editor')) { lastFocusedEditable = e.target; }
     });
   }
 
-  function newDocument() { state = createEmptyState(); saveState(); render(); }
+  function setupFormatToolbar() {
+    const selectors = '.sidebar [data-cmd], .floating-fmt-toolbar [data-cmd]';
+    document.querySelectorAll(selectors).forEach(btn => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        if (!lastFocusedEditable) return; lastFocusedEditable.focus();
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand(btn.dataset.cmd, false, btn.dataset.arg || null);
+        lastFocusedEditable.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+    document.querySelectorAll('[data-icon]').forEach(btn => {
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        if (!lastFocusedEditable) return; lastFocusedEditable.focus();
+        document.execCommand('insertHTML', false, `<span class="wi-icon wi-${btn.dataset.icon}" contenteditable="false">${btn.textContent}</span>&nbsp;`);
+        lastFocusedEditable.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  }
+
+  function setupFloatingFormatToolbar() {
+    const t = document.getElementById('floatingFormatToolbar'); if (!t) return;
+    document.addEventListener('focusin', (e) => { if (e.target.classList?.contains('rich-text-editor')) t.hidden = false; });
+    document.addEventListener('focusout', () => { setTimeout(() => { if (!document.activeElement.classList?.contains('rich-text-editor') && !t.contains(document.activeElement)) t.hidden = true; }, 40); });
+  }
+
+  function exportTemplate() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })); a.download = 'template.json'; a.click(); }
+  function importTemplate() { pickFile('.json').then(f => { if (!f) return; const r = new FileReader(); r.onload = () => { state = normalizeState(JSON.parse(r.result)); saveState(); render(); }; r.readAsText(f); }); }
+  function newDocument() { if (confirm('Clear template?')) { state = createEmptyState(); saveState(); render(); } }
 
   const COLOR_PRESETS = [
     '#b85c58', '#c07080', '#d49098', '#b87550', '#c08560', '#c89070',
@@ -1238,18 +931,19 @@
     '#8898c8', '#826090', '#7870a8', '#9888c0', '#a07898'
   ];
 
+  window.exportTemplate = exportTemplate; window.importTemplate = importTemplate; window.newDocument = newDocument;
+
   document.addEventListener('DOMContentLoaded', () => {
     loadState();
-    document.body.classList.remove('sidebar-collapsed'); /* Persistent default */
+    document.body.classList.remove('sidebar-collapsed');
     render();
     setupDragAndDrop();
-    
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      document.body.classList.toggle('sidebar-collapsed');
-    });
-    document.getElementById('sidebarCollapseBtn').addEventListener('click', () => {
-      document.body.classList.add('sidebar-collapsed');
-    });
+    setupFocusTracking();
+    setupFormatToolbar();
+    setupFloatingFormatToolbar();
+
+    document.getElementById('hamburgerBtn').onclick = () => document.body.classList.toggle('sidebar-collapsed');
+    document.getElementById('sidebarCollapseBtn').onclick = () => document.body.classList.add('sidebar-collapsed');
   });
 })();
 </script>
