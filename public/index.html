@@ -71,7 +71,9 @@
     /* ---------- Layout ---------- */
     body {
       padding-top: calc(48px + env(safe-area-inset-top, 0px));
-      /* Sidebar is a hamburger-style overlay; content does not get pushed. */
+      /* Below 1200px the sidebar is a hamburger-style overlay and content is
+         not pushed. At >=1200px it docks as a static left column and the
+         desktop media query below adds a matching padding-left. */
       padding-left: 0;
     }
 
@@ -209,6 +211,33 @@
       opacity: 0;
       pointer-events: none;
     }
+
+    /* ---------- Desktop: static (docked) sidebar ---------- */
+    /* On wide screens the sidebar is a permanent left column rather than a
+       hamburger overlay: it's always visible and the page content is pushed
+       to the right of it. Gated at 1200px so there's room for the 300px
+       sidebar plus the full 8.5in (816px) page without horizontal scroll;
+       below this width the overlay behaviour above still applies. */
+    @media screen and (min-width: 1200px) {
+      body { padding-left: 300px; }
+      /* Always show the sidebar, regardless of the collapsed class the
+         hamburger machinery still toggles internally (it only matters on
+         narrower screens now). */
+      .sidebar,
+      body.sidebar-collapsed .sidebar {
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        box-shadow: none;
+      }
+      /* No dimming backdrop and no open/close toggles in docked mode. */
+      .sidebar-backdrop,
+      .topbar .hamburger-btn,
+      .sidebar-header .sidebar-toggle {
+        display: none !important;
+      }
+    }
+
     .sidebar-header {
       position: sticky;
       top: 0;
