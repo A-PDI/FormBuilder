@@ -71,8 +71,15 @@
     /* ---------- Layout ---------- */
     body {
       padding-top: calc(48px + env(safe-area-inset-top, 0px));
-      /* Sidebar is a hamburger-style overlay; content does not get pushed. */
+      /* On wide screens the sidebar is a static, docked panel: when it's open
+         the page content is pushed right to make room (no overlay/backdrop).
+         On narrow screens (see the max-width:900px media query) it reverts to
+         a hamburger-style overlay so it doesn't crowd the page. */
       padding-left: 0;
+      transition: padding-left 0.2s ease;
+    }
+    body:not(.sidebar-collapsed) {
+      padding-left: 300px;
     }
 
     /* ---------- Top bar (file ops) ---------- */
@@ -187,7 +194,9 @@
       flex-direction: column;
       transform-origin: top left;
       transition: transform 0.2s ease, opacity 0.2s ease;
-      box-shadow: 4px 6px 18px rgba(0,0,0,0.22);
+      /* Subtle edge shadow for the docked panel; the overlay media query below
+         swaps in a heavier drop shadow when the sidebar floats over content. */
+      box-shadow: 1px 0 4px rgba(0,0,0,0.10);
     }
     body.sidebar-collapsed .sidebar {
       transform: translateX(-100%);
@@ -195,7 +204,9 @@
       pointer-events: none;
     }
 
-    /* Backdrop dim while the menu is open (clicking it closes the menu) */
+    /* Backdrop dim while the menu is open (clicking it closes the menu).
+       Only used in overlay (narrow-screen) mode; hidden when the sidebar is
+       docked statically. */
     .sidebar-backdrop {
       position: fixed;
       top: calc(48px + env(safe-area-inset-top, 0px));
@@ -204,6 +215,7 @@
       z-index: 210;
       opacity: 1;
       transition: opacity 0.18s ease;
+      display: none;
     }
     body.sidebar-collapsed .sidebar-backdrop {
       opacity: 0;
@@ -1494,6 +1506,8 @@
       height: 22px;
       border-radius: 3px;
       border: 2px solid transparent;
+      /* Hairline so light swatches (yellow, light green) stay visible on white */
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
       cursor: pointer;
       padding: 0;
       -webkit-print-color-adjust: exact;
@@ -1638,11 +1652,23 @@
       .topbar .hint { display: none; }
       .topbar .spacer { flex: 1; }
 
-      /* Sidebar already overlays content on all screen sizes; only the
-         sidebar top offset needs to track the taller mobile topbar. */
+      /* On narrow screens the sidebar reverts to a hamburger overlay: it floats
+         over the page (no content push) with a dimming backdrop. */
+      body:not(.sidebar-collapsed) {
+        padding-left: 0;
+      }
+      .sidebar {
+        box-shadow: 4px 6px 18px rgba(0,0,0,0.22);
+      }
+      .sidebar-backdrop {
+        display: block;
+      }
       .sidebar,
       .sidebar-backdrop {
         top: calc(52px + env(safe-area-inset-top, 0px));
+      }
+      body.sidebar-collapsed .sidebar-backdrop {
+        display: none;
       }
 
       /* Bigger tap targets in sidebar */
@@ -3254,6 +3280,9 @@
     // ----- Header bar with editable title -----
     const header = document.createElement('div');
     header.className = 'parts-header';
+    // Optional custom title-bar color (set via the paint button); falls back
+    // to the default cobalt defined in CSS.
+    if (block.color) header.style.background = block.color;
     const headerLabel = document.createElement('div');
     headerLabel.className = 'parts-header-label rich-text-editor';
     headerLabel.contentEditable = 'true';
@@ -4249,10 +4278,18 @@
       wrap.appendChild(titleBtn);
     }
 
-    // Color picker - callout blocks only
-    if (block.type === 'callout') {
+    // Color picker. Callouts recolor their border/badge; Chart (parts) and
+    // Photo Array (photoarray) recolor their title bar. The Photo Array only
+    // offers it once a title bar exists (there's nothing to color otherwise).
+    const colorable =
+      block.type === 'callout' ||
+      block.type === 'parts' ||
+      (block.type === 'photoarray' && typeof block.title === 'string');
+    if (colorable) {
       const paintBtn = document.createElement('button');
-      paintBtn.title = 'Change color';
+      paintBtn.title = block.type === 'callout'
+        ? 'Change color'
+        : 'Change title bar color';
       paintBtn.className = 'paint-btn';
       paintBtn.textContent = '▣';  // ▣ filled square (color indicator)
       if (block.color) paintBtn.style.color = block.color;
@@ -4327,6 +4364,9 @@
   function buildBlockTitleBar(block) {
     const bar = document.createElement('div');
     bar.className = 'block-title-bar no-print-no'; // bar prints with the block
+    // Optional custom title-bar color (set via the paint button); falls back
+    // to the default cobalt defined in CSS.
+    if (block.color) bar.style.background = block.color;
     const text = document.createElement('div');
     text.className = 'block-title-text rich-text-editor';
     text.contentEditable = 'true';
@@ -4855,9 +4895,10 @@
       }
     });
 
-    // Always default to closed for the hamburger model. Persisted "open" only
-    // restores within the same session (closes again on next reload).
-    setSidebarCollapsed(true, false);
+    // On wide screens the sidebar is docked statically, so default it open for
+    // an at-a-glance toolbox. On narrow screens it's a hamburger overlay, so
+    // default it closed to keep the page unobstructed.
+    setSidebarCollapsed(isMobileViewport(), false);
   }
 
   function isMobileViewport() {
@@ -4968,6 +5009,7 @@
 
   // ---------- Color picker ----------
   const COLOR_PRESETS = [
+    // Muted shop-floor palette (matches the on-page callout colors)
     '#b85c58', '#c07080', '#d49098',
     '#b87550', '#c08560', '#c89070',
     '#b89840', '#c4a860', '#d0bc80',
@@ -4975,13 +5017,33 @@
     '#708c60', '#90a870', '#5a8e90',
     '#6ea0a0', '#4e72a0', '#6888b0',
     '#8898c8', '#826090', '#7870a8',
-    '#9888c0', '#a07898'
+    '#9888c0', '#a07898',
+    // Microsoft Office "Standard Colors" row (Dark Red ... Purple)
+    '#c00000', '#ff0000', '#ffc000',
+    '#ffff00', '#92d050', '#00b050',
+    '#00b0f0', '#0070c0', '#002060',
+    '#7030a0'
   ];
 
   function hideColorPicker() {
     const popup = document.getElementById('colorPickerPopup');
     if (popup) popup.remove();
     document.removeEventListener('click', _colorPickerOutsideClick);
+  }
+
+  // Live-preview a block color without a full re-render. Applies to whichever
+  // colorable surface the block exposes: a callout's --callout-color, a Chart
+  // header, or a Photo Array / step title bar (which lives in the row wrapper).
+  function previewBlockColor(blockId, color) {
+    const blockEl = document.querySelector('[data-block-id="' + blockId + '"]');
+    if (blockEl) {
+      blockEl.style.setProperty('--callout-color', color);
+      const header = blockEl.querySelector('.parts-header');
+      if (header) header.style.background = color;
+    }
+    const rowEl = document.querySelector('[data-row-block-id="' + blockId + '"]');
+    const bar = rowEl && rowEl.querySelector('.block-title-bar');
+    if (bar) bar.style.background = color;
   }
 
   function _colorPickerOutsideClick(e) {
@@ -5028,9 +5090,9 @@
     colorInput.value = block.color || '#4e72a0';
     colorInput.addEventListener('mousedown', e => e.stopPropagation());
     colorInput.addEventListener('input', () => {
-      // Live preview without full re-render
-      const blockEl = document.querySelector('[data-block-id="' + block.id + '"]');
-      if (blockEl) blockEl.style.setProperty('--callout-color', colorInput.value);
+      // Live preview without full re-render. Covers callouts (border/badge),
+      // Chart headers, and Photo Array / step title bars.
+      previewBlockColor(block.id, colorInput.value);
     });
     colorInput.addEventListener('change', () => {
       block.color = colorInput.value;
